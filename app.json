@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "temp_rn",
+    "slug": "temp_rn",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/bingo.jpeg",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/bingo.jpeg",
+      "resizeMode": "contain",
+      "backgroundColor": "#c9d4e5"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#c9d4e5",
+        "foregroundImage": "./assets/bingo.jpeg"
+      }
+    },
+    "web": {
+      "favicon": "./assets/bingo.jpeg"
+    },
+    "plugins": [
+      "expo-audio"
+    ]
+  }
+}
