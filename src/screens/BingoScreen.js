@@ -30,7 +30,8 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline }) => {
   const winSentRef = useRef(false);
   const resetSeenRef = useRef(0);
 
-  const isOnline = mode === 'online' && !!session;
+  const isOnline = mode !== 'offline' && !!session;
+  const onlineModeLabel = mode === 'cloud' ? 'Global room' : 'Local room';
   const currentTurnPlayer = isOnline ? session.players?.find(p => p.id === session.currentTurnPlayerId) : null;
   const isGameOver = isOnline && session.winnerId !== null && session.winnerId !== undefined;
   const onlineStatus = !isOnline
@@ -40,10 +41,10 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline }) => {
     : session.status === 'error'
     ? (session.error || 'Connection error')
     : session.inGame
-    ? `Online game - Players: ${session.players.length}/4`
-    : `Online lobby - Players: ${session.players.length}/4`;
+    ? `${onlineModeLabel} - Players: ${session.players.length}`
+    : `${onlineModeLabel} - Waiting for all players`;
   const turnLabel = isOnline && session.inGame
-    ? (session.isYourTurn ? 'Your turn' : `Waiting for ${currentTurnPlayer?.name || 'opponent'}`)
+    ? (session.isYourTurn ? 'Your turn' : `${currentTurnPlayer?.name || 'Player'}'s turn`)
     : null;
   const winnerLabel = isOnline && isGameOver && session.winnerId !== session.playerId
     ? `Winner: ${session.players.find(p => p.id === session.winnerId)?.name || 'Player'}`

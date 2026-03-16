@@ -1,22 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, BackHandler } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import QRCode from 'react-native-qrcode-svg';
 
 const DEFAULT_PORT = 5050;
 
-const OnlineLobbyScreen = ({ session, onBack, onEnterGame }) => {
-  const [playerName, setPlayerName] = useState('');
+const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlayerName, onPlayerNameChange }) => {
+  const insets = useSafeAreaInsets();
+  const [playerName, setPlayerName] = useState(savedPlayerName || '');
   const [hostPort, setHostPort] = useState(String(DEFAULT_PORT));
   const [joinHost, setJoinHost] = useState('');
   const [joinPort, setJoinPort] = useState(String(DEFAULT_PORT));
   const [scannerVisible, setScannerVisible] = useState(false);
+  const [advancedVisible, setAdvancedVisible] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
 
   const isConnected = session.status === 'connected';
   const isHost = session.role === 'host';
-  const displayName = playerName.trim() || (isHost ? 'Host' : 'Player');
+  const displayName = playerName.trim() || savedPlayerName?.trim() || (isHost ? 'Host' : 'Player');
+
+  useEffect(() => {
+    setPlayerName(savedPlayerName || '');
+  }, [savedPlayerName]);
+
+  const handleNameBlur = async () => {
+    if (!onPlayerNameChange) return;
+    const nextName = playerName.trim();
+    if (!nextName) return;
+    await onPlayerNameChange(nextName);
+  };
 
   const parsePort = (value) => {
     const parsed = Number.parseInt(value, 10);
@@ -35,18 +48,32 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame }) => {
     if (!data) return;
     const clean = data.replace('bingo://', '').trim();
     const [ip, port] = clean.split(':');
-    if (ip) setJoinHost(ip);
-    if (port) setJoinPort(port);
+    if (!ip) return;
+    const resolvedPort = parsePort(port || String(DEFAULT_PORT));
+    setJoinHost(ip);
+    setJoinPort(String(resolvedPort));
     setScannerVisible(false);
+    session.joinRoom({ host: ip, port: resolvedPort, name: displayName });
   };
 
-  const showScanner = () => {
+  const showScanner = async () => {
     if (!permission?.granted) {
-      requestPermission();
-      return;
+      const result = await requestPermission();
+      if (!result?.granted) return;
     }
     setScannerVisible(true);
   };
+
+  useEffect(() => {
+    if (!scannerVisible) return;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setScannerVisible(false);
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [scannerVisible]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -65,6 +92,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame }) => {
             placeholder="Player name"
             value={playerName}
             onChangeText={setPlayerName}
+            onBlur={handleNameBlur}
             placeholderTextColor="#6b7280"
           />
         </View>
@@ -72,21 +100,31 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame }) => {
         {!isConnected && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Create room</Text>
-            <View style={styles.row}>
-              <TextInput
-                style={styles.inputSmall}
-                keyboardType="numeric"
-                value={hostPort}
-                onChangeText={setHostPort}
-                placeholder="Port"
-                placeholderTextColor="#6b7280"
-              />
-              <TouchableOpacity style={styles.primaryButton} onPress={handleCreateRoom}>
-                <Text style={styles.primaryButtonText}>Host</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.helpText}>Quick start with default settings.</Text>
+            <TouchableOpacity style={styles.primaryButtonFull} onPress={handleCreateRoom}>
+              <Text style={styles.primaryButtonText}>Create Room</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.linkButton} onPress={() => setAdvancedVisible((prev) => !prev)}>
+              <Text style={styles.linkButtonText}>{advancedVisible ? 'Hide advanced settings' : 'Show advanced settings'}</Text>
+            </TouchableOpacity>
+
+            {advancedVisible && (
+              <View style={styles.advancedCard}>
+                <Text style={styles.label}>Host port (optional)</Text>
+                <TextInput
+                  style={styles.inputSmall}
+                  keyboardType="numeric"
+                  value={hostPort}
+                  onChangeText={setHostPort}
+                  placeholder="Port"
+                  placeholderTextColor="#6b7280"
+                />
+              </View>
+            )}
 
             <Text style={styles.sectionTitle}>Join room</Text>
+            <Text style={styles.helpText}>Scan QR to join instantly, or enter host details manually.</Text>
             <TextInput
               style={styles.input}
               placeholder="Host IP (example 192.168.0.10)"
@@ -122,13 +160,21 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame }) => {
             </Text>
             {session.hostInfo && (
               <View style={styles.hostInfo}>
-                <Text style={styles.statusText}>IP: {session.hostInfo.ip}</Text>
-                <Text style={styles.statusText}>Port: {session.hostInfo.port}</Text>
+                <TouchableOpacity style={styles.linkButton} onPress={() => setAdvancedVisible((prev) => !prev)}>
+                  <Text style={styles.linkButtonText}>{advancedVisible ? 'Hide connection details' : 'Show connection details'}</Text>
+                </TouchableOpacity>
+                {advancedVisible && (
+                  <>
+                    <Text style={styles.statusText}>IP: {session.hostInfo.ip}</Text>
+                    <Text style={styles.statusText}>Port: {session.hostInfo.port}</Text>
+                  </>
+                )}
               </View>
             )}
             {isHost && session.hostInfo && (
               <View style={styles.qrContainer}>
-                <QRCode value={`${session.hostInfo.ip}:${session.hostInfo.port}`} size={160} />
+                <Text style={styles.helpText}>Share this QR so others can join instantly.</Text>
+                <QRCode value={`bingo://${session.hostInfo.ip}:${session.hostInfo.port}`} size={160} />
               </View>
             )}
             <View style={styles.playerList}>
@@ -147,14 +193,22 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame }) => {
         {session.error && <Text style={styles.errorText}>{session.error}</Text>}
       </View>
 
-      <Modal visible={scannerVisible} animationType="slide">
+      <Modal visible={scannerVisible} animationType="fade" onRequestClose={() => setScannerVisible(false)}>
         <View style={styles.scannerContainer}>
           <CameraView
             style={styles.camera}
             onBarcodeScanned={handleScan}
           />
-          <TouchableOpacity style={styles.scannerClose} onPress={() => setScannerVisible(false)}>
-            <Text style={styles.scannerCloseText}>Close Scanner</Text>
+          <View style={[styles.scannerHeader, { paddingTop: insets.top + 8 }]}> 
+            <TouchableOpacity style={styles.scannerCloseTop} onPress={() => setScannerVisible(false)}>
+              <Text style={styles.scannerCloseText}>Close Scanner</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.scannerHintBox, { bottom: insets.bottom + 18 }]}> 
+            <Text style={styles.scannerHint}>Point the camera at a room QR code to join automatically.</Text>
+          </View>
+          <TouchableOpacity style={[styles.scannerCloseFloating, { bottom: insets.bottom + 64 }]} onPress={() => setScannerVisible(false)}>
+            <Text style={styles.scannerCloseText}>Close</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -240,6 +294,12 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: '#059669',
     paddingVertical: 10,
+      primaryButtonFull: {
+        backgroundColor: '#059669',
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+      },
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -265,6 +325,26 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
+  },
+  helpText: {
+    color: '#475569',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  linkButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+  },
+  linkButtonText: {
+    color: '#0f766e',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  advancedCard: {
+    backgroundColor: '#eef2ff',
+    borderRadius: 10,
+    padding: 10,
+    gap: 8,
   },
   outlineButtonText: {
     color: '#0f172a',
@@ -300,10 +380,44 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
   },
-  scannerClose: {
+  scannerHeader: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    top: 0,
+    zIndex: 3,
+    alignItems: 'flex-end',
+  },
+  scannerCloseTop: {
     backgroundColor: '#111827',
-    paddingVertical: 12,
-    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
+  scannerCloseFloating: {
+    position: 'absolute',
+    alignSelf: 'center',
+    backgroundColor: '#111827',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    zIndex: 3,
+  },
+  scannerHintBox: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.84)',
+    borderRadius: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    zIndex: 2,
+  },
+  scannerHint: {
+    color: '#e2e8f0',
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 18,
   },
   scannerCloseText: {
     color: '#ffffff',

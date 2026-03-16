@@ -153,7 +153,8 @@ export const useLanSession = () => {
     if (players.length < 2) return;
     if (!players.every((player) => player.ready)) return;
 
-    const startingPlayerId = players[0]?.id ?? null;
+    const startingIndex = Math.floor(Math.random() * players.length);
+    const startingPlayerId = players[startingIndex]?.id ?? null;
     updateState((prev) => ({
       ...prev,
       inGame: true,
@@ -174,10 +175,18 @@ export const useLanSession = () => {
     socketsRef.current.delete(clientId);
     parsersRef.current.delete(clientId);
 
-    updateState((prev) => ({
-      ...prev,
-      players: removePlayer(prev.players, clientId)
-    }));
+    updateState((prev) => {
+      const players = removePlayer(prev.players, clientId);
+      const nextTurnPlayerId = prev.currentTurnPlayerId === clientId
+        ? getNextTurnPlayerId(players, clientId)
+        : prev.currentTurnPlayerId;
+
+      return {
+        ...prev,
+        players,
+        currentTurnPlayerId: nextTurnPlayerId
+      };
+    });
     broadcastState();
   };
 
