@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { theme } from '../theme';
 
 const Tile = ({ number, marked, winning, onPress, disabled }) => {
   const isEmpty = number === null;
@@ -17,9 +18,9 @@ const Tile = ({ number, marked, winning, onPress, disabled }) => {
       activeOpacity={0.7}
       disabled={disabled}
     >
-      <View style={styles.textContainer}>
-        <Text style={styles.text}>
-          {isEmpty ? '?' : number}
+      <View style={styles.content}>
+        <Text style={[styles.text, (marked || winning) && styles.textMarked]}>
+          {isEmpty ? '' : number}
         </Text>
       </View>
     </TouchableOpacity>
@@ -28,43 +29,46 @@ const Tile = ({ number, marked, winning, onPress, disabled }) => {
 
 const styles = StyleSheet.create({
   tile: {
-    width: '19%', 
+    width: '18.5%', // Slightly smaller to allow gap
     aspectRatio: 1, 
-    borderRadius: 4,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
+    borderRadius: theme.radius.sm,
+    borderBottomWidth: 4,
     overflow: 'hidden',
   },
-  textContainer: {
+  content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emptyTile: {
-    backgroundColor: '#3b82f6', // Blue 500
+    backgroundColor: theme.colors.surfaceLight,
+    borderColor: theme.colors.surface,
   },
   assignedTile: {
-    backgroundColor: '#a27146', // Brown
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primaryDark,
   },
   markedTile: {
-    backgroundColor: '#4f46e5', // Indigo/Bluish for "Marked"
+    backgroundColor: theme.colors.tileMarked,
+    borderColor: '#C0392B', // Darker red/orange for depth
   },
   winningTile: {
-    backgroundColor: '#059669', // Emerald 600 (Winning lines)
+    backgroundColor: theme.colors.success,
+    borderColor: '#028068',
   },
   disabledTile: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   text: {
-    color: '#ffffff',
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    color: theme.colors.textPrimary,
+    ...theme.typography.h1,
     includeFontPadding: false,
     textAlignVertical: 'center',
+  },
+  textMarked: {
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   }
 });
 

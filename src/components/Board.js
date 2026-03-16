@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Tile from './Tile';
+import { theme } from '../theme';
 
 const Board = ({ board, winningIndexes, onTilePress, disabled }) => {
   return (
@@ -24,8 +25,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 4,
-    paddingHorizontal: 4,
+    gap: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.xs,
     backgroundColor: 'transparent',
     width: '100%',
   }

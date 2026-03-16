@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Modal, BackHandler, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import QRCode from 'react-native-qrcode-svg';
+import { theme } from '../theme';
+import GameButton from '../components/GameButton';
 
 const DEFAULT_PORT = 5050;
 
@@ -77,139 +79,153 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.topRow}>
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Local Room</Text>
-        </View>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.topRow}>
+        <GameButton title="BACK" variant="danger" onPress={onBack} style={styles.backButton} />
+        <Text style={styles.title}>LOCAL PLAY</Text>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.section}>
-          <Text style={styles.label}>Your name</Text>
+          <Text style={styles.sectionTitle}>YOUR AGENT NAME</Text>
           <TextInput
             style={styles.input}
             placeholder="Player name"
             value={playerName}
             onChangeText={setPlayerName}
             onBlur={handleNameBlur}
-            placeholderTextColor="#6b7280"
+            placeholderTextColor={theme.colors.textSecondary}
+            maxLength={16}
+            autoCapitalize="characters"
           />
         </View>
 
         {!isConnected && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Create room</Text>
-            <Text style={styles.helpText}>Quick start with default settings.</Text>
-            <TouchableOpacity style={styles.primaryButtonFull} onPress={handleCreateRoom}>
-              <Text style={styles.primaryButtonText}>Create Room</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>DEPLOY OUTPOST</Text>
+            <Text style={styles.helpText}>Host a Local game on your current Wi-Fi network.</Text>
+            <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} />
 
-            <TouchableOpacity style={styles.linkButton} onPress={() => setAdvancedVisible((prev) => !prev)}>
-              <Text style={styles.linkButtonText}>{advancedVisible ? 'Hide advanced settings' : 'Show advanced settings'}</Text>
-            </TouchableOpacity>
+            <View style={styles.advancedToggle}>
+              <GameButton 
+                title={advancedVisible ? "HIDE ADVANCED" : "SHOW ADVANCED"} 
+                variant="accent" 
+                onPress={() => setAdvancedVisible((prev) => !prev)} 
+                style={styles.advancedBtn}
+              />
+            </View>
 
             {advancedVisible && (
               <View style={styles.advancedCard}>
-                <Text style={styles.label}>Host port (optional)</Text>
+                <Text style={styles.label}>HOST PORT (OPTIONAL)</Text>
                 <TextInput
-                  style={styles.inputSmall}
+                  style={styles.input}
                   keyboardType="numeric"
                   value={hostPort}
                   onChangeText={setHostPort}
                   placeholder="Port"
-                  placeholderTextColor="#6b7280"
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
             )}
 
-            <Text style={styles.sectionTitle}>Join room</Text>
-            <Text style={styles.helpText}>Scan QR to join instantly, or enter host details manually.</Text>
+            <View style={styles.divider} />
+
+            <Text style={styles.sectionTitle}>INFILTRATE OUTPOST</Text>
+            <Text style={styles.helpText}>Scan a host's QR to join instantly or use IP.</Text>
+            
+            <GameButton title="SCAN QR CODE" variant="accent" onPress={showScanner} style={styles.actionButton} />
+
+            <View style={styles.orDivider}>
+              <View style={styles.line} />
+              <Text style={styles.orText}>OR</Text>
+              <View style={styles.line} />
+            </View>
+
             <TextInput
               style={styles.input}
-              placeholder="Host IP (example 192.168.0.10)"
+              placeholder="HOST IP (e.g. 192.168.0.10)"
               value={joinHost}
               onChangeText={setJoinHost}
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={theme.colors.textSecondary}
               autoCapitalize="none"
             />
             <View style={styles.row}>
               <TextInput
-                style={styles.inputSmall}
+                style={[styles.input, styles.flexInput]}
                 keyboardType="numeric"
                 value={joinPort}
                 onChangeText={setJoinPort}
                 placeholder="Port"
-                placeholderTextColor="#6b7280"
+                placeholderTextColor={theme.colors.textSecondary}
               />
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleJoinRoom}>
-                <Text style={styles.secondaryButtonText}>Join</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.outlineButton} onPress={showScanner}>
-                <Text style={styles.outlineButtonText}>Scan QR</Text>
-              </TouchableOpacity>
+              <GameButton title="JOIN" variant="secondary" onPress={handleJoinRoom} style={styles.flexBtn} />
             </View>
           </View>
         )}
 
         {isConnected && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Room status</Text>
-            <Text style={styles.statusText}>
-              {isHost ? 'Hosting room' : 'Connected to host'}
-            </Text>
+            <Text style={styles.sectionTitle}>{isHost ? 'HOSTING OUTPOST' : 'CONNECTED TO OUTPOST'}</Text>
+            
             {session.hostInfo && (
               <View style={styles.hostInfo}>
-                <TouchableOpacity style={styles.linkButton} onPress={() => setAdvancedVisible((prev) => !prev)}>
-                  <Text style={styles.linkButtonText}>{advancedVisible ? 'Hide connection details' : 'Show connection details'}</Text>
-                </TouchableOpacity>
+                <View style={styles.advancedToggle}>
+                  <GameButton 
+                    title={advancedVisible ? "HIDE COORDS" : "SHOW COORDS"} 
+                    variant="accent" 
+                    onPress={() => setAdvancedVisible((prev) => !prev)}
+                    style={styles.advancedBtn}
+                  />
+                </View>
                 {advancedVisible && (
-                  <>
+                  <View style={styles.coordsBox}>
                     <Text style={styles.statusText}>IP: {session.hostInfo.ip}</Text>
-                    <Text style={styles.statusText}>Port: {session.hostInfo.port}</Text>
-                  </>
+                    <Text style={styles.statusText}>PORT: {session.hostInfo.port}</Text>
+                  </View>
                 )}
               </View>
             )}
             {isHost && session.hostInfo && (
               <View style={styles.qrContainer}>
-                <Text style={styles.helpText}>Share this QR so others can join instantly.</Text>
-                <QRCode value={`bingo://${session.hostInfo.ip}:${session.hostInfo.port}`} size={160} />
+                <Text style={styles.helpText}>Show this QR code to recruits.</Text>
+                <View style={styles.qrWrapper}>
+                  <QRCode value={`bingo://${session.hostInfo.ip}:${session.hostInfo.port}`} size={160} backgroundColor={theme.colors.surface} color={theme.colors.textPrimary} />
+                </View>
               </View>
             )}
+
             <View style={styles.playerList}>
+              <Text style={styles.listHeader}>SQUAD ({session.players.length})</Text>
               {session.players.map((player) => (
-                <Text key={player.id} style={styles.playerItem}>
-                  {player.ready ? 'Ready' : 'Waiting'} - {player.name}
-                </Text>
+                <View key={player.id} style={styles.playerItem}>
+                  <Text style={styles.playerItemText}>• {player.name}</Text>
+                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
+                    {player.ready ? 'READY' : 'WAITING'}
+                  </Text>
+                </View>
               ))}
             </View>
-            <TouchableOpacity style={styles.primaryButton} onPress={onEnterGame}>
-              <Text style={styles.primaryButtonText}>Enter Game</Text>
-            </TouchableOpacity>
+            <GameButton title="ENTER GAME" variant="primary" onPress={onEnterGame} style={styles.actionButton} />
           </View>
         )}
 
-        {session.error && <Text style={styles.errorText}>{session.error}</Text>}
-      </View>
+        {session.error && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{session.error}</Text>
+          </View>
+        )}
+      </ScrollView>
 
       <Modal visible={scannerVisible} animationType="fade" onRequestClose={() => setScannerVisible(false)}>
         <View style={styles.scannerContainer}>
-          <CameraView
-            style={styles.camera}
-            onBarcodeScanned={handleScan}
-          />
+          <CameraView style={styles.camera} onBarcodeScanned={handleScan} />
           <View style={[styles.scannerHeader, { paddingTop: insets.top + 8 }]}> 
-            <TouchableOpacity style={styles.scannerCloseTop} onPress={() => setScannerVisible(false)}>
-              <Text style={styles.scannerCloseText}>Close Scanner</Text>
-            </TouchableOpacity>
+            <GameButton title="ABORT SCAN" variant="danger" onPress={() => setScannerVisible(false)} style={styles.scannerCloseTop} />
           </View>
           <View style={[styles.scannerHintBox, { bottom: insets.bottom + 18 }]}> 
-            <Text style={styles.scannerHint}>Point the camera at a room QR code to join automatically.</Text>
+            <Text style={styles.scannerHint}>Aim your crosshairs at a host's QR code.</Text>
           </View>
-          <TouchableOpacity style={[styles.scannerCloseFloating, { bottom: insets.bottom + 64 }]} onPress={() => setScannerVisible(false)}>
-            <Text style={styles.scannerCloseText}>Close</Text>
-          </TouchableOpacity>
         </View>
       </Modal>
     </SafeAreaView>
@@ -219,159 +235,183 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#c9d4e5',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    gap: 16,
+    backgroundColor: theme.colors.background,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 2,
+    borderColor: theme.colors.surfaceLight,
   },
   backButton: {
-    backgroundColor: '#1f2937',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    width: 100,
+    marginRight: theme.spacing.md,
   },
-  backButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
+  title: {
+    ...theme.typography.h1,
+    color: theme.colors.textPrimary,
+    flex: 1,
+    textAlign: 'center',
+    paddingRight: 100 + theme.spacing.md,
+  },
+  scrollContainer: {
+    padding: theme.spacing.md,
+    gap: theme.spacing.lg,
   },
   section: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.surfaceLight,
+    ...theme.shadows.card,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
+    ...theme.typography.h2,
+    color: theme.colors.accentYellow,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  helpText: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
+    textAlign: 'center',
   },
   label: {
-    fontSize: 14,
-    color: '#475569',
+    ...theme.typography.body2,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
+    fontWeight: 'bold',
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderColor: '#e2e8f0',
-    borderWidth: 1,
-    color: '#0f172a',
+    backgroundColor: theme.colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    color: theme.colors.textPrimary,
+    ...theme.typography.h2,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
   },
-  inputSmall: {
+  actionButton: {
+    marginTop: theme.spacing.sm,
+  },
+  advancedToggle: {
+    alignItems: 'center',
+    marginVertical: theme.spacing.md,
+  },
+  advancedBtn: {
+    width: 200,
+  },
+  advancedCard: {
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    marginBottom: theme.spacing.md,
+  },
+  divider: {
+    height: 2,
+    backgroundColor: theme.colors.surfaceLight,
+    marginVertical: theme.spacing.md,
+  },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: theme.spacing.md,
+  },
+  line: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderColor: '#e2e8f0',
-    borderWidth: 1,
-    color: '#0f172a',
+    height: 2,
+    backgroundColor: theme.colors.surfaceLight,
+  },
+  orText: {
+    color: theme.colors.textSecondary,
+    paddingHorizontal: theme.spacing.md,
+    ...theme.typography.body2,
+    fontWeight: 'bold',
   },
   row: {
     flexDirection: 'row',
-    gap: 10,
-    alignItems: 'center',
+    gap: theme.spacing.md,
   },
-  primaryButton: {
-    backgroundColor: '#059669',
-    paddingVertical: 10,
-      primaryButtonFull: {
-        backgroundColor: '#059669',
-        paddingVertical: 12,
-        borderRadius: 8,
-        alignItems: 'center',
-      },
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
+  flexInput: {
+    flex: 1,
+    marginBottom: 0,
   },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    backgroundColor: '#0f172a',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  outlineButton: {
-    borderColor: '#0f172a',
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  helpText: {
-    color: '#475569',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  linkButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-  },
-  linkButtonText: {
-    color: '#0f766e',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  advancedCard: {
-    backgroundColor: '#eef2ff',
-    borderRadius: 10,
-    padding: 10,
-    gap: 8,
-  },
-  outlineButtonText: {
-    color: '#0f172a',
-    fontWeight: '700',
-  },
-  statusText: {
-    color: '#0f172a',
-    fontSize: 15,
-    fontWeight: '600',
+  flexBtn: {
+    flex: 1,
   },
   hostInfo: {
-    gap: 4,
+    marginBottom: theme.spacing.md,
+  },
+  coordsBox: {
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    alignItems: 'center',
+  },
+  statusText: {
+    ...theme.typography.h2,
+    color: theme.colors.success,
   },
   qrContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
+    marginBottom: theme.spacing.lg,
+  },
+  qrWrapper: {
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.sm,
   },
   playerList: {
-    gap: 6,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  listHeader: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.sm,
+    fontWeight: 'bold',
   },
   playerItem: {
-    color: '#1f2937',
-    fontSize: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  playerItemText: {
+    ...theme.typography.body1,
+    color: theme.colors.textPrimary,
+  },
+  playerStatus: {
+    ...theme.typography.body2,
+    fontWeight: 'bold',
+  },
+  statusReady: {
+    color: theme.colors.success,
+  },
+  statusWaiting: {
+    color: theme.colors.warning,
+  },
+  errorBox: {
+    backgroundColor: 'rgba(214, 48, 49, 0.2)',
+    borderWidth: 2,
+    borderColor: theme.colors.danger,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
   },
   errorText: {
-    color: '#b91c1c',
-    fontWeight: '600',
+    color: theme.colors.danger,
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
   scannerContainer: {
     flex: 1,
@@ -382,47 +422,28 @@ const styles = StyleSheet.create({
   },
   scannerHeader: {
     position: 'absolute',
-    left: 12,
-    right: 12,
     top: 0,
-    zIndex: 3,
-    alignItems: 'flex-end',
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   scannerCloseTop: {
-    backgroundColor: '#111827',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  scannerCloseFloating: {
-    position: 'absolute',
-    alignSelf: 'center',
-    backgroundColor: '#111827',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    zIndex: 3,
+    width: 200,
   },
   scannerHintBox: {
     position: 'absolute',
-    left: 12,
-    right: 12,
-    backgroundColor: 'rgba(15, 23, 42, 0.84)',
-    borderRadius: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 10,
-    zIndex: 2,
+    width: '100%',
+    alignItems: 'center',
   },
   scannerHint: {
-    color: '#e2e8f0',
+    color: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 12,
+    borderRadius: 8,
+    ...theme.typography.body2,
     textAlign: 'center',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  scannerCloseText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
+    overflow: 'hidden',
+  }
 });
 
 export default OnlineLobbyScreen;

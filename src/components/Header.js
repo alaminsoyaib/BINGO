@@ -1,36 +1,38 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { theme } from '../theme';
 
 const Header = ({ isSetupPhase, nextNumberToPlace, isWin, mode, onlineStatus, turnLabel, lastCalledNumber, winnerLabel }) => {
-  const isOnline = mode === 'online';
+  const isOnline = mode === 'online' || mode === 'cloud';
 
   return (
     <View style={styles.container}>
       {isOnline && (
-        <View style={styles.onlineStatus}>
+        <View style={styles.onlineStatusBox}>
           <Text style={styles.onlineStatusText}>{onlineStatus}</Text>
-          {turnLabel && <Text style={styles.onlineStatusText}>{turnLabel}</Text>}
+          {turnLabel && <Text style={styles.turnText}>{turnLabel}</Text>}
           {lastCalledNumber !== null && lastCalledNumber !== undefined && (
-            <Text style={styles.onlineStatusText}>Last Call : {lastCalledNumber}</Text>
+            <Text style={styles.lastCallText}>LAST CALL: {lastCalledNumber}</Text>
           )}
           {winnerLabel && <Text style={styles.winnerText}>{winnerLabel}</Text>}
         </View>
       )}
-      {isWin ? (
-        <Text style={styles.winTitle}>--- YOU WON ---</Text>
-      ) : isSetupPhase ? (
-        <>
-          <Text style={styles.titleLabel}>Select 1-25 tiles</Text>
-          <Text style={styles.drawnLabel}>
-            Next Number : <Text style={styles.drawnNumber}>{nextNumberToPlace > 25 ? '--' : nextNumberToPlace}</Text>
-          </Text>
-        </>
-      ) : (
-        <>
-          <Text style={styles.titleLabel}>Match lines to unlock letter</Text>
-          <Text style={styles.titleLabel}>Play</Text>
-        </>
-      )}
+      
+      <View style={styles.phaseContainer}>
+        {isWin ? (
+          <Text style={styles.winTitle}>MISSION ACCOMPLISHED</Text>
+        ) : isSetupPhase ? (
+          <>
+            <Text style={styles.titleLabel}>PREPARE YOUR BOARD</Text>
+            <View style={styles.drawnBox}>
+              <Text style={styles.drawnLabel}>NEXT TILE: </Text>
+              <Text style={styles.drawnNumber}>{nextNumberToPlace > 25 ? '--' : nextNumberToPlace}</Text>
+            </View>
+          </>
+        ) : (
+          <Text style={styles.titleLabel}>MATCH LINES TO WIN</Text>
+        )}
+      </View>
     </View>
   );
 };
@@ -39,45 +41,72 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignItems: 'center',
-    paddingTop: 10,
-    paddingBottom: 5,
-    gap: 4,
+    paddingVertical: theme.spacing.sm,
+    gap: theme.spacing.sm,
   },
-  onlineStatus: {
+  onlineStatusBox: {
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.radius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.surfaceLight,
     alignItems: 'center',
-    gap: 2,
-    marginBottom: 6,
+    width: '100%',
+    marginBottom: theme.spacing.xs,
   },
   onlineStatusText: {
-    fontSize: 16,
-    color: '#3f3f46',
-    fontWeight: '500',
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    fontWeight: 'bold',
+  },
+  turnText: {
+    ...theme.typography.h2,
+    color: theme.colors.accentYellow,
+    marginVertical: theme.spacing.xs,
+  },
+  lastCallText: {
+    ...theme.typography.body1,
+    color: theme.colors.textPrimary,
   },
   winTitle: {
-    fontSize: 28, // Slightly larger for emphasis
-    color: '#059669', // Match win green
-    fontWeight: 'bold',
-    paddingVertical: 10,
+    ...theme.typography.h1,
+    color: theme.colors.success,
+    textShadowColor: theme.colors.success,
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 10,
+    marginVertical: theme.spacing.md,
   },
   winnerText: {
-    fontSize: 18,
-    color: '#0f766e',
-    fontWeight: '700',
+    ...theme.typography.h2,
+    color: theme.colors.success,
+    marginTop: theme.spacing.xs,
+  },
+  phaseContainer: {
+    alignItems: 'center',
+    gap: theme.spacing.xs,
   },
   titleLabel: {
-    fontSize: 24,
-    color: '#18181b', // Changing to dark text to match the gray background
-    fontWeight: '600',
+    ...theme.typography.h2,
+    color: theme.colors.textPrimary,
+    letterSpacing: 1,
+  },
+  drawnBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surfaceLight,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.radius.xl,
+    marginTop: theme.spacing.xs,
   },
   drawnLabel: {
-    fontSize: 18,
-    color: '#3f3f46',
-    fontWeight: '500',
+    ...theme.typography.body1,
+    color: theme.colors.textSecondary,
   },
   drawnNumber: {
-    fontSize: 20,
-    color: '#27272a',
-    fontWeight: 'bold',
+    ...theme.typography.h2,
+    color: theme.colors.accent,
   }
 });
 

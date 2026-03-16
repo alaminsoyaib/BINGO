@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Share } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Share, StatusBar, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
+import { theme } from '../theme';
+import GameButton from '../components/GameButton';
 
 const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlayerName, onPlayerNameChange }) => {
   const [playerName, setPlayerName] = useState(savedPlayerName || '');
@@ -38,79 +40,87 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.topRow}>
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Online Anywhere</Text>
-        </View>
+      <StatusBar barStyle="light-content" />
+      <View style={styles.topRow}>
+        <GameButton title="BACK" variant="danger" onPress={onBack} style={styles.backButton} />
+        <Text style={styles.title}>GLOBAL PLAY</Text>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.section}>
-          <Text style={styles.label}>Your name</Text>
+          <Text style={styles.sectionTitle}>YOUR AGENT NAME</Text>
           <TextInput
             style={styles.input}
             placeholder="Player name"
             value={playerName}
             onChangeText={setPlayerName}
             onBlur={handleNameBlur}
-            placeholderTextColor="#6b7280"
+            placeholderTextColor={theme.colors.textSecondary}
+            maxLength={16}
+            autoCapitalize="characters"
           />
         </View>
 
         {!isConnected && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Create global room</Text>
-            <Text style={styles.helpText}>Anyone with the room code can join from anywhere.</Text>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleCreateRoom}>
-              <Text style={styles.primaryButtonText}>Create Room</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>CREATE A ROOM</Text>
+            <Text style={styles.helpText}>Host a game for anyone, anywhere.</Text>
+            <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} />
 
-            <Text style={styles.sectionTitle}>Join global room</Text>
+            <View style={styles.divider} />
+
+            <Text style={styles.sectionTitle}>JOIN A ROOM</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter room code"
+              placeholder="ENTER ROOM CODE"
               value={roomCodeInput}
               onChangeText={(text) => setRoomCodeInput(text.toUpperCase())}
               autoCapitalize="characters"
-              placeholderTextColor="#6b7280"
+              placeholderTextColor={theme.colors.textSecondary}
               maxLength={6}
             />
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleJoinRoom}>
-              <Text style={styles.secondaryButtonText}>Join Room</Text>
-            </TouchableOpacity>
+            <GameButton title="JOIN ROOM" variant="secondary" onPress={handleJoinRoom} style={styles.actionButton} />
           </View>
         )}
 
         {isConnected && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{isHost ? 'Hosting global room' : 'Connected to global room'}</Text>
-            <Text style={styles.roomCode}>Room: {session.roomCode}</Text>
+            <Text style={styles.sectionTitle}>{isHost ? 'HOSTING ROOM' : 'CONNECTED TO ROOM'}</Text>
+            <View style={styles.roomCodeContainer}>
+              <Text style={styles.roomCode}>{session.roomCode}</Text>
+            </View>
 
             <View style={styles.playerList}>
+              <Text style={styles.listHeader}>PLAYERS ({session.players.length})</Text>
               {session.players.map((player) => (
-                <Text key={player.id} style={styles.playerItem}>
-                  {player.ready ? 'Ready' : 'Waiting'} - {player.name}
-                </Text>
+                <View key={player.id} style={styles.playerItem}>
+                  <Text style={styles.playerItemText}>• {player.name}</Text>
+                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
+                    {player.ready ? 'READY' : 'WAITING'}
+                  </Text>
+                </View>
               ))}
             </View>
 
             <View style={styles.qrContainer}>
-              <QRCode value={session.roomCode || ''} size={160} />
+              <View style={styles.qrWrapper}>
+                <QRCode value={session.roomCode || ''} size={160} backgroundColor={theme.colors.surface} color={theme.colors.textPrimary} />
+              </View>
             </View>
 
-            <TouchableOpacity style={styles.secondaryButton} onPress={shareInvite}>
-              <Text style={styles.secondaryButtonText}>Share Invite</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.primaryButton} onPress={onEnterGame}>
-              <Text style={styles.primaryButtonText}>Enter Game</Text>
-            </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <GameButton title="SHARE" variant="secondary" onPress={shareInvite} style={styles.halfBtn} />
+              <GameButton title="ENTER GAME" variant="accent" onPress={onEnterGame} style={styles.halfBtn} />
+            </View>
           </View>
         )}
 
-        {session.error && <Text style={styles.errorText}>{session.error}</Text>}
-      </View>
+        {session.error && (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{session.error}</Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -118,110 +128,146 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#c9d4e5',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    gap: 16,
+    backgroundColor: theme.colors.background,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 2,
+    borderColor: theme.colors.surfaceLight,
   },
   backButton: {
-    backgroundColor: '#1f2937',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    width: 100,
+    marginRight: theme.spacing.md,
   },
-  backButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
+  title: {
+    ...theme.typography.h1,
+    color: theme.colors.textPrimary,
+    flex: 1,
+    textAlign: 'center',
+    paddingRight: 100 + theme.spacing.md, // offset back button width
+  },
+  scrollContainer: {
+    padding: theme.spacing.md,
+    gap: theme.spacing.lg,
   },
   section: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
+    borderRadius: theme.radius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.surfaceLight,
+    ...theme.shadows.card,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  helpText: {
-    color: '#475569',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  label: {
-    fontSize: 14,
-    color: '#475569',
-  },
-  input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderColor: '#e2e8f0',
-    borderWidth: 1,
-    color: '#0f172a',
-  },
-  primaryButton: {
-    backgroundColor: '#059669',
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    backgroundColor: '#0f172a',
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-  },
-  roomCode: {
-    fontSize: 18,
-    color: '#0f766e',
-    fontWeight: '800',
+    ...theme.typography.h2,
+    color: theme.colors.accentYellow,
+    marginBottom: theme.spacing.sm,
     textAlign: 'center',
   },
+  helpText: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
+    textAlign: 'center',
+  },
+  input: {
+    backgroundColor: theme.colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    color: theme.colors.textPrimary,
+    ...theme.typography.h2,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  actionButton: {
+    marginTop: theme.spacing.sm,
+  },
+  divider: {
+    height: 2,
+    backgroundColor: theme.colors.surfaceLight,
+    marginVertical: theme.spacing.xl,
+  },
+  roomCodeContainer: {
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.md,
+    borderRadius: theme.radius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.accent,
+    marginBottom: theme.spacing.lg,
+  },
+  roomCode: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: theme.colors.accent,
+    textAlign: 'center',
+    letterSpacing: 8,
+  },
   playerList: {
-    gap: 6,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  listHeader: {
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.sm,
+    fontWeight: 'bold',
   },
   playerItem: {
-    color: '#1f2937',
-    fontSize: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  playerItemText: {
+    ...theme.typography.body1,
+    color: theme.colors.textPrimary,
+  },
+  playerStatus: {
+    ...theme.typography.body2,
+    fontWeight: 'bold',
+  },
+  statusReady: {
+    color: theme.colors.success,
+  },
+  statusWaiting: {
+    color: theme.colors.warning,
   },
   qrContainer: {
     alignItems: 'center',
-    paddingVertical: 12,
+    marginBottom: theme.spacing.lg,
+  },
+  qrWrapper: {
+    padding: theme.spacing.sm,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.sm,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+  },
+  halfBtn: {
+    flex: 1,
+  },
+  errorBox: {
+    backgroundColor: 'rgba(214, 48, 49, 0.2)',
+    borderWidth: 2,
+    borderColor: theme.colors.danger,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
   },
   errorText: {
-    color: '#b91c1c',
-    fontWeight: '600',
+    color: theme.colors.danger,
+    textAlign: 'center',
+    fontWeight: 'bold',
   }
 });
 

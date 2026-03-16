@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Modal, TextInput, StatusBar, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { theme } from '../theme';
+import GameButton from '../components/GameButton';
 
 const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -19,54 +21,68 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
       <View style={styles.container}>
         <View style={styles.topBar}>
-          <Text style={styles.nameBadge}>Player: {currentName || 'Player'}</Text>
-          <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
-            <Text style={styles.settingsButtonText}>Settings</Text>
+          <View style={styles.playerBadge}>
+            <Text style={styles.nameLabel}>PLAYER</Text>
+            <Text style={styles.nameBadge}>{currentName || 'Player'}</Text>
+          </View>
+          <TouchableOpacity activeOpacity={0.8} style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
+            <Text style={styles.settingsButtonText}>✎ EDIT</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>BINGO</Text>
-        <Text style={styles.subtitle}>Choose how you want to play</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>BINGO</Text>
+          <View style={styles.titleUnderline} />
+          <Text style={styles.subtitle}>CHOOSE GAME MODE</Text>
+        </View>
 
-        <TouchableOpacity style={styles.primaryButton} onPress={() => onSelectMode('offline')}>
-          <Text style={styles.primaryButtonText}>Offline</Text>
-          <Text style={styles.buttonHint}>Play on one device</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonGroup}>
+          <GameButton
+            title="PRACTICE (OFFLINE)"
+            subtitle="Play solo on this device"
+            variant="accent"
+            onPress={() => onSelectMode('offline')}
+            style={styles.button}
+          />
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => onSelectMode('online')}>
-          <Text style={styles.secondaryButtonText}>Online (Local)</Text>
-          <Text style={styles.buttonHintDark}>Play together on Wi-Fi</Text>
-        </TouchableOpacity>
+          <GameButton
+            title="LOCAL MULTIPLAYER"
+            subtitle="Play together on Wi-Fi (LAN)"
+            variant="primary"
+            onPress={() => onSelectMode('online')}
+            style={styles.button}
+          />
 
-        <TouchableOpacity style={styles.tertiaryButton} onPress={() => onSelectMode('cloud')}>
-          <Text style={styles.secondaryButtonText}>Online (Anywhere)</Text>
-          <Text style={styles.buttonHintDark}>Create room code and play globally</Text>
-        </TouchableOpacity>
+          <GameButton
+            title="GLOBAL MULTIPLAYER"
+            subtitle="Play with anyone, anywhere"
+            variant="secondary"
+            onPress={() => onSelectMode('cloud')}
+            style={styles.button}
+          />
+        </View>
       </View>
 
-      <Modal visible={settingsVisible} transparent animationType="fade" onRequestClose={() => setSettingsVisible(false)}>
+      <Modal visible={settingsVisible} transparent animationType="slide" onRequestClose={() => setSettingsVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Profile Settings</Text>
-            <Text style={styles.modalHint}>Change your name anytime. This name is saved on your device.</Text>
+            <Text style={styles.modalTitle}>PLAYER PROFILE</Text>
+            <Text style={styles.modalHint}>Enter your display name for multiplayer games.</Text>
             <TextInput
               style={styles.nameInput}
               value={draftName}
               onChangeText={setDraftName}
               placeholder="Enter player name"
-              placeholderTextColor="#6b7280"
-              maxLength={24}
-              autoCapitalize="words"
+              placeholderTextColor={theme.colors.textSecondary}
+              maxLength={16}
+              autoCapitalize="characters"
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setSettingsVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
+              <GameButton title="CANCEL" variant="danger" onPress={() => setSettingsVisible(false)} style={styles.modalBtn} />
+              <GameButton title="SAVE" variant="success" onPress={handleSave} style={styles.modalBtn} />
             </View>
           </View>
         </View>
@@ -78,167 +94,130 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#c9d4e5',
+    backgroundColor: theme.colors.background,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
+    justifyContent: 'space-between',
+    paddingBottom: theme.spacing.xxl * 2,
+    paddingTop: theme.spacing.xl,
   },
   topBar: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    position: 'absolute',
-    top: 24,
-    left: 24,
-    right: 24,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.sm,
+    borderRadius: theme.radius.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.surfaceLight,
+  },
+  playerBadge: {
+    flexDirection: 'column',
+    paddingHorizontal: theme.spacing.sm,
+  },
+  nameLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
   nameBadge: {
-    color: '#1f2937',
-    fontSize: 14,
-    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   settingsButton: {
-    backgroundColor: '#0f172a',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: theme.colors.surfaceLight,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.md,
   },
   settingsButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 13,
+    color: theme.colors.accentYellow,
+    fontWeight: '900',
+    fontSize: 14,
+  },
+  titleContainer: {
+    alignItems: 'center',
+    marginVertical: theme.spacing.xl,
   },
   title: {
-    fontSize: 42,
-    fontWeight: '800',
-    color: '#111827',
-    marginBottom: 8,
+    ...theme.typography.title,
+    color: theme.colors.textPrimary,
+    textShadowColor: theme.colors.primary,
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
+    fontSize: 64,
+  },
+  titleUnderline: {
+    height: 4,
+    width: 100,
+    backgroundColor: theme.colors.accent,
+    borderRadius: 2,
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   subtitle: {
-    fontSize: 18,
-    color: '#374151',
-    marginBottom: 20,
+    ...theme.typography.button,
+    color: theme.colors.textSecondary,
+    letterSpacing: 2,
   },
-  primaryButton: {
+  buttonGroup: {
     width: '100%',
-    backgroundColor: '#059669',
-    borderRadius: 10,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
+    gap: theme.spacing.lg,
   },
-  secondaryButton: {
+  button: {
     width: '100%',
-    backgroundColor: '#0f172a',
-    borderRadius: 10,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tertiaryButton: {
-    width: '100%',
-    backgroundColor: '#0b5563',
-    borderRadius: 10,
-    paddingVertical: 18,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  secondaryButtonText: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  buttonHint: {
-    marginTop: 4,
-    color: '#ecfdf3',
-    fontSize: 14,
-  },
-  buttonHintDark: {
-    marginTop: 4,
-    color: '#cbd5f5',
-    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    padding: theme.spacing.lg,
   },
   modalCard: {
     width: '100%',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 16,
-    gap: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    padding: theme.spacing.lg,
+    borderWidth: 4,
+    borderColor: theme.colors.surfaceLight,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0f172a',
+    ...theme.typography.h2,
+    color: theme.colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
   },
   modalHint: {
-    color: '#475569',
-    fontSize: 14,
-    lineHeight: 20,
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.lg,
   },
   nameInput: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#0f172a',
-    fontSize: 16,
+    backgroundColor: theme.colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    color: theme.colors.textPrimary,
+    ...theme.typography.h2,
+    textAlign: 'center',
+    marginBottom: theme.spacing.xl,
   },
   modalActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
+    gap: theme.spacing.md,
   },
-  cancelButton: {
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 8,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-  },
-  cancelButtonText: {
-    color: '#334155',
-    fontWeight: '700',
-  },
-  saveButton: {
-    backgroundColor: '#059669',
-    borderRadius: 8,
-    paddingVertical: 9,
-    paddingHorizontal: 16,
-  },
-  saveButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
+  modalBtn: {
+    flex: 1,
   },
 });
 

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { theme } from '../theme';
+import GameButton from '../components/GameButton';
 
 const FirstLaunchNameScreen = ({ onContinue, suggestedName }) => {
   const [name, setName] = useState('');
@@ -15,30 +17,39 @@ const FirstLaunchNameScreen = ({ onContinue, suggestedName }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
       <View style={styles.container}>
-        <Text style={styles.title}>Welcome to BINGO</Text>
-        <Text style={styles.subtitle}>Set your player name (optional)</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>BINGO</Text>
+          <Text style={styles.subtitle}>PLAYER SETUP</Text>
+        </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>Player Name</Text>
+          <Text style={styles.label}>ENTER CODENAME</Text>
           <TextInput
             style={styles.input}
             value={name}
             onChangeText={setName}
-            placeholder={`Default: ${suggestedName}`}
-            placeholderTextColor="#6b7280"
-            maxLength={24}
-            autoCapitalize="words"
+            placeholder={suggestedName}
+            placeholderTextColor={theme.colors.textSecondary}
+            maxLength={16}
+            autoCapitalize="characters"
           />
-          <Text style={styles.helper}>You can change this anytime from Settings on the dashboard.</Text>
+          <Text style={styles.helper}>You can change this later in settings.</Text>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleUseDefault}>
-              <Text style={styles.secondaryButtonText}>Use Default</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleContinue}>
-              <Text style={styles.primaryButtonText}>Continue</Text>
-            </TouchableOpacity>
+            <GameButton 
+              title="USE DEFAULT" 
+              variant="secondary" 
+              onPress={handleUseDefault} 
+              style={styles.btnContext}
+            />
+            <GameButton 
+              title="CONTINUE" 
+              variant="accent" 
+              onPress={handleContinue} 
+              style={styles.btnContext}
+            />
           </View>
         </View>
       </View>
@@ -49,84 +60,69 @@ const FirstLaunchNameScreen = ({ onContinue, suggestedName }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#c9d4e5',
+    backgroundColor: theme.colors.background,
   },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: theme.spacing.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 14,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.xl,
   },
   title: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#0f172a',
+    ...theme.typography.title,
+    color: theme.colors.textPrimary,
+    textShadowColor: theme.colors.primary,
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
+    fontSize: 54,
   },
   subtitle: {
-    color: '#334155',
-    fontSize: 16,
-    marginBottom: 8,
+    ...theme.typography.button,
+    color: theme.colors.accent,
+    letterSpacing: 3,
+    marginTop: theme.spacing.sm,
   },
   card: {
     width: '100%',
-    backgroundColor: '#f8fafc',
-    borderRadius: 14,
-    padding: 16,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    padding: theme.spacing.xl,
+    borderWidth: 4,
+    borderColor: theme.colors.surfaceLight,
+    ...theme.shadows.card,
   },
   label: {
-    color: '#0f172a',
-    fontSize: 15,
-    fontWeight: '700',
+    ...theme.typography.h2,
+    color: theme.colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#0f172a',
-    fontSize: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    color: theme.colors.textPrimary,
+    ...theme.typography.h2,
+    textAlign: 'center',
+    marginBottom: theme.spacing.sm,
   },
   helper: {
-    fontSize: 13,
-    color: '#64748b',
-    lineHeight: 19,
+    ...theme.typography.body2,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.xl,
   },
   actions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 6,
+    gap: theme.spacing.lg,
   },
-  secondaryButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#94a3b8',
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: '#334155',
-    fontWeight: '700',
-  },
-  primaryButton: {
-    flex: 1,
-    backgroundColor: '#059669',
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '700',
+  btnContext: {
+    width: '100%',
   },
 });
 
