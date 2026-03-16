@@ -39,10 +39,11 @@ const Controls = ({ isSetupPhase, onAutoFill, onRestart, onUndo, canUndo, hasSta
           </View>
           {showUndo && (
             <View style={styles.flexBtn}>
-              <GameButton 
-                title="UNDO" 
-                variant="secondary" 
-                onPress={onUndo} 
+              <GameButton
+                title="UNDO"
+                variant="secondary"
+                icon={(color) => <MaterialCommunityIcons name="undo" size={24} color={color} />}
+                onPress={onUndo}
               />
             </View>
           )}

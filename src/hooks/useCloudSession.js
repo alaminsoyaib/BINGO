@@ -323,6 +323,7 @@ export const useCloudSession = () => {
     createRoom,
     joinRoom,
     leaveRoom,
+    startGame: attemptAutoStart,
     sendReady,
     sendCall,
     sendReset,

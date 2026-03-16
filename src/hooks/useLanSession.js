@@ -431,6 +431,7 @@ export const useLanSession = () => {
     hostRoom,
     joinRoom,
     leaveRoom,
+    startGame: maybeAutoStart,
     sendReady,
     sendCall,
     sendReset,

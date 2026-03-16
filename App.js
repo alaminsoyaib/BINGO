@@ -1,7 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { BackHandler } from 'react-native';
+import { BackHandler, Text, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
+
+// Set global custom font styles to bypass system fonts on Android devices like Samsung
+if (Text.defaultProps == null) {
+  Text.defaultProps = {};
+  Text.defaultProps.allowFontScaling = false;
+  Text.defaultProps.style = { fontFamily: 'sans-serif' };
+}
+if (TextInput.defaultProps == null) {
+  TextInput.defaultProps = {};
+  TextInput.defaultProps.allowFontScaling = false;
+  TextInput.defaultProps.style = { fontFamily: 'sans-serif' };
+}
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BingoScreen from './src/screens/BingoScreen';
 import ModeSelectScreen from './src/screens/ModeSelectScreen';

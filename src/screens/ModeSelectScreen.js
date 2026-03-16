@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Modal, TextInput, StatusBar, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
 
@@ -29,7 +30,10 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
             <Text style={styles.nameBadge}>{currentName || 'Player'}</Text>
           </View>
           <TouchableOpacity activeOpacity={0.8} style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
-            <Text style={styles.settingsButtonText}>✎ EDIT</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <FontAwesome5 name="pencil-alt" size={14} color={theme.colors.accentYellow} />
+              <Text style={styles.settingsButtonText}>EDIT</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -41,8 +45,8 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
 
         <View style={styles.buttonGroup}>
           <GameButton
-            title="PRACTICE (OFFLINE)"
-            subtitle="Play solo on this device"
+            title="OFFLINE"
+            subtitle="Play locally without networking"
             variant="accent"
             onPress={() => onSelectMode('offline')}
             style={styles.button}

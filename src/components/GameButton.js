@@ -1,20 +1,22 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { theme } from '../theme';
 
-const GameButton = ({ 
-  title, 
-  onPress, 
+const GameButton = ({
+  title,
+  onPress,
   subtitle,
   variant = 'primary', // 'primary', 'secondary', 'accent', 'danger'
   disabled = false,
+  loading = false,
+  icon,
   style
 }) => {
-  
+
   const getColors = () => {
     switch (variant) {
       case 'secondary':
-        return { bg: theme.colors.secondary, border: '#D65A5A', text: theme.colors.textPrimary };
+        return { bg: theme.colors.secondary, border: '#D65A5A', text: '#2D2A43' };
       case 'accent':
         return { bg: theme.colors.accent, border: '#00A3A0', text: '#1A1829' };
       case 'danger':
@@ -28,15 +30,24 @@ const GameButton = ({
   const colors = getColors();
 
   return (
-    <TouchableOpacity 
-      activeOpacity={0.8} 
-      onPress={onPress} 
-      disabled={disabled}
-      style={[styles.container, style, disabled && styles.disabled]}
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={[styles.container, style, (disabled || loading) && styles.disabled]}
     >
       <View style={[styles.inner, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-        <Text style={[styles.text, { color: colors.text }]}>{title}</Text>
-        {subtitle && <Text style={[styles.subtitle, { color: colors.text }]}>{subtitle}</Text>}
+        {loading ? (
+          <ActivityIndicator color={colors.text} size="small" />
+        ) : (
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {icon && typeof icon === 'function' ? icon(colors.text) : icon}
+              <Text style={[styles.text, { color: colors.text }]}>{title}</Text>
+            </View>
+            {subtitle && <Text style={[styles.subtitle, { color: colors.text }]}>{subtitle}</Text>}
+          </>
+        )}
       </View>
     </TouchableOpacity>
   );

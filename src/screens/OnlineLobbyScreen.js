@@ -26,6 +26,12 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
     setPlayerName(savedPlayerName || '');
   }, [savedPlayerName]);
 
+  useEffect(() => {
+    if (session.inGame) {
+      onEnterGame();
+    }
+  }, [session.inGame, onEnterGame]);
+
   const handleNameBlur = async () => {
     if (!onPlayerNameChange) return;
     const nextName = playerName.trim();
@@ -81,8 +87,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <View style={styles.topRow}>
-        <GameButton title="BACK" variant="danger" onPress={onBack} style={styles.backButton} />
-        <Text style={styles.title}>LOCAL PLAY</Text>
+          <GameButton title="< BACK" variant="danger" onPress={onBack} style={{ width: 100 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
@@ -206,7 +211,14 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
                 </View>
               ))}
             </View>
-            <GameButton title="ENTER GAME" variant="primary" onPress={onEnterGame} style={styles.actionButton} />
+              <GameButton title={isHost ? "START" : "READY"} variant="success" onPress={() => {
+                if (isHost) {
+                  if (session.startGame) session.startGame();
+                } else {
+                  if (session.sendReady) session.sendReady();
+                }
+              }} style={styles.actionButton} />
+              <GameButton title="EXIT ROOM" variant="danger" onPress={onBack} style={{ marginTop: theme.spacing.md }} />
           </View>
         )}
 

@@ -19,30 +19,37 @@ export const theme = {
     warning: '#FDCB6E',
   },
   typography: {
-    fontFamily: 'System', // Could be replaced with a custom font like 'FredokaOne'
+    fontFamily: 'sans-serif', // Forces basic Roboto instead of user's curly fonts
+    // ...
     title: {
+      fontFamily: 'sans-serif',
       fontSize: 48,
       fontWeight: '900',
       textTransform: 'uppercase',
       letterSpacing: 2,
     },
     h1: {
+      fontFamily: 'sans-serif',
       fontSize: 32,
       fontWeight: '800',
     },
     h2: {
+      fontFamily: 'sans-serif',
       fontSize: 24,
       fontWeight: 'bold',
     },
     body1: {
+      fontFamily: 'sans-serif',
       fontSize: 18,
       fontWeight: '600',
     },
     body2: {
+      fontFamily: 'sans-serif',
       fontSize: 16,
       fontWeight: '500',
     },
     button: {
+      fontFamily: 'sans-serif',
       fontSize: 18,
       fontWeight: 'bold',
       textTransform: 'uppercase',
