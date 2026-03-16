@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-const Tile = ({ number, marked, winning, onPress }) => {
+const Tile = ({ number, marked, winning, onPress, disabled }) => {
   const isEmpty = number === null;
   
   return (
@@ -10,10 +10,12 @@ const Tile = ({ number, marked, winning, onPress }) => {
         styles.tile, 
         isEmpty ? styles.emptyTile : styles.assignedTile,
         (marked && !winning) && styles.markedTile,
-        winning && styles.winningTile
+        winning && styles.winningTile,
+        disabled && styles.disabledTile
       ]} 
       onPress={onPress}
       activeOpacity={0.7}
+      disabled={disabled}
     >
       <View style={styles.textContainer}>
         <Text style={styles.text}>
@@ -52,6 +54,9 @@ const styles = StyleSheet.create({
   },
   winningTile: {
     backgroundColor: '#059669', // Emerald 600 (Winning lines)
+  },
+  disabledTile: {
+    opacity: 0.6,
   },
   text: {
     color: '#ffffff',

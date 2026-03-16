@@ -82,6 +82,20 @@ export const useBingoGame = () => {
     }
   };
 
+  const markNumber = (number) => {
+    if (isSetupPhase) return;
+    const index = board.findIndex(tile => tile.value === number);
+    if (index === -1) return;
+    if (board[index].marked) return;
+
+    setBoard(prevBoard => {
+      const newBoard = [...prevBoard];
+      newBoard[index] = { ...newBoard[index], marked: true };
+      checkBingo(newBoard);
+      return newBoard;
+    });
+  };
+
   const autoFillRemaining = () => {
     if (!isSetupPhase) return;
     setBoard(prev => {
@@ -143,6 +157,7 @@ export const useBingoGame = () => {
     bingoWord: getBingoWord(),
     isWin: bingoCount >= 5,
     toggleTile,
+    markNumber,
     autoFillRemaining,
     undoLastMark,
     restartGame,

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Tile from './Tile';
 
-const Board = ({ board, winningIndexes, onTilePress }) => {
+const Board = ({ board, winningIndexes, onTilePress, disabled }) => {
   return (
     <View style={styles.grid}>
       {board.map((tile, index) => (
@@ -12,6 +12,7 @@ const Board = ({ board, winningIndexes, onTilePress }) => {
           marked={tile.marked} 
           winning={winningIndexes.has(index)}
           onPress={() => onTilePress(index)} 
+          disabled={disabled}
         />
       ))}
     </View>

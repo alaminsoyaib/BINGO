@@ -29,7 +29,13 @@
       "favicon": "./assets/bingo.jpeg"
     },
     "plugins": [
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow BINGO to use the camera to scan room QR codes."
+        }
+      ]
     ],
     "extra": {
       "eas": {

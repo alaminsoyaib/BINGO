@@ -2,7 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const Controls = ({ isSetupPhase, onAutoFill, onRestart, onUndo, canUndo, hasStarted }) => {
+const Controls = ({ isSetupPhase, onAutoFill, onRestart, onUndo, canUndo, hasStarted, mode, canRestart }) => {
+  const isOnline = mode === 'online';
+  const showUndo = !isOnline && canUndo;
+  const restartDisabled = isOnline && !canRestart;
+
   return (
     <View style={styles.container}>
       {isSetupPhase ? (
@@ -11,17 +15,25 @@ const Controls = ({ isSetupPhase, onAutoFill, onRestart, onUndo, canUndo, hasSta
             <Text style={styles.buttonText}>Random Number</Text>
           </TouchableOpacity>
           {hasStarted && (
-            <TouchableOpacity style={styles.restartButtonLarge} onPress={onRestart}>
+            <TouchableOpacity 
+              style={[styles.restartButtonLarge, restartDisabled && styles.disabledButton]} 
+              onPress={onRestart}
+              disabled={restartDisabled}
+            >
               <Text style={styles.dangerButtonText}>Restart</Text>
             </TouchableOpacity>
           )}
         </View>
       ) : (
         <View style={styles.row}>
-          <TouchableOpacity style={styles.dangerButton} onPress={onRestart}>
+          <TouchableOpacity 
+            style={[styles.dangerButton, restartDisabled && styles.disabledButton]} 
+            onPress={onRestart}
+            disabled={restartDisabled}
+          >
             <Text style={styles.dangerButtonText}>Restart</Text>
           </TouchableOpacity>
-          {canUndo && (
+          {showUndo && (
             <TouchableOpacity style={styles.secondaryButton} onPress={onUndo}>
               <View style={styles.buttonContent}>
                 <MaterialCommunityIcons name="undo" size={24} color="#fff" style={styles.buttonIcon} />
@@ -108,6 +120,9 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginRight: 8,
+  },
+  disabledButton: {
+    opacity: 0.6,
   }
 });
 
