@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "temp_rn",
-    "slug": "temp_rn",
+    "name": "BINGO",
+    "slug": "BINGO",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/bingo.jpeg",
@@ -15,16 +15,27 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.alaminsoyaib.bingo",
       "adaptiveIcon": {
         "backgroundColor": "#c9d4e5",
         "foregroundImage": "./assets/bingo.jpeg"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/bingo.jpeg"
     },
     "plugins": [
       "expo-audio"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "20a3fd07-82c1-437e-9876-f85dc0d7321d"
+      }
+    },
+    "owner": "alaminsoyaib"
   }
 }
