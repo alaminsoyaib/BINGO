@@ -117,12 +117,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     gap: theme.spacing.xs,
-    minHeight: 70,
+    minHeight: theme.spacing.xxl + theme.spacing.sm,
   },
   titleLabel: {
     ...theme.typography.h2,
     color: theme.colors.textPrimary,
-    letterSpacing: 1,
+    letterSpacing: theme.typography.button.letterSpacing,
   },
   drawnBox: {
     flexDirection: 'row',

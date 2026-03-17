@@ -7,8 +7,10 @@ const ScreenWrapper = ({ children, style }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
-      <View style={[styles.container, style]}>
-        {children}
+      <View style={styles.container}>
+        <View style={[styles.content, style]}>
+          {children}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -21,8 +23,15 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingHorizontal: 8,
-    paddingTop: 10,
+    width: '100%',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+    width: '100%',
+    maxWidth: theme.layout.maxContentWidth,
+    paddingHorizontal: theme.spacing.sm,
+    paddingTop: theme.spacing.sm + theme.spacing.xs / 2,
     alignItems: 'center',
   },
 });

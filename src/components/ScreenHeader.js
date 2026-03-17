@@ -9,7 +9,7 @@ const ScreenHeader = ({ title, onBack, onSettings }) => {
       <View style={styles.topBar}>
         {onBack ? (
           <TouchableOpacity style={styles.iconButton} onPress={onBack}>
-            <Ionicons name="arrow-back" size={28} color={theme.colors.textPrimary} />
+            <Ionicons name="arrow-back" size={theme.icon.lg} color={theme.colors.textPrimary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.iconPlaceholder} />
@@ -17,7 +17,7 @@ const ScreenHeader = ({ title, onBack, onSettings }) => {
         
         {onSettings ? (
           <TouchableOpacity style={styles.iconButton} onPress={onSettings}>
-            <Ionicons name="settings-sharp" size={24} color={theme.colors.textPrimary} />
+            <Ionicons name="settings-sharp" size={theme.icon.md} color={theme.colors.textPrimary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.iconPlaceholder} />
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 70,
+    minHeight: theme.spacing.xxl + theme.spacing.sm,
   },
   topBar: {
     position: 'absolute',
@@ -49,23 +49,23 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   iconButton: {
-    padding: 8,
+    padding: theme.spacing.sm,
     backgroundColor: 'rgba(45, 42, 67, 0.6)',
-    borderRadius: 22,
-    width: 44,
-    height: 44,
+    borderRadius: theme.radius.round,
+    width: theme.spacing.xxl - theme.spacing.xs,
+    height: theme.spacing.xxl - theme.spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconPlaceholder: {
-    width: 44,
-    height: 44,
+    width: theme.spacing.xxl - theme.spacing.xs,
+    height: theme.spacing.xxl - theme.spacing.xs,
   },
   screenTitle: {
     fontFamily: theme.typography.h1.fontFamily,
     fontSize: theme.typography.h1.fontSize,
     color: theme.colors.textPrimary,
-    letterSpacing: 1,
+    letterSpacing: theme.typography.button.letterSpacing,
     textAlign: 'center',
   },
 });

@@ -25,7 +25,7 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
             <Text style={styles.nameBadge}>{currentName || 'Player'}</Text>
           </View>
           <TouchableOpacity activeOpacity={0.8} style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
-            <Ionicons name="settings-sharp" size={20} color={theme.colors.accentYellow} />
+            <Ionicons name="settings-sharp" size={theme.icon.md} color={theme.colors.accentYellow} />
           </TouchableOpacity>
         </View>
 
@@ -98,20 +98,20 @@ const styles = StyleSheet.create({
   },
   nameLabel: {
     color: theme.colors.textSecondary,
-    fontSize: 10,
+    fontSize: theme.typography.body2.fontSize * 0.7,
     fontWeight: 'bold',
-    letterSpacing: 1,
+    letterSpacing: theme.typography.button.letterSpacing,
   },
   nameBadge: {
     color: theme.colors.textPrimary,
-    fontSize: 18,
+    fontSize: theme.typography.body1.fontSize,
     fontWeight: '900',
     textTransform: 'uppercase',
   },
   settingsButton: {
     backgroundColor: theme.colors.surfaceLight,
-    width: 40,
-    height: 40,
+    width: theme.spacing.xl + theme.spacing.xs,
+    height: theme.spacing.xl + theme.spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.radius.md,
@@ -124,22 +124,22 @@ const styles = StyleSheet.create({
     ...theme.typography.title,
     color: theme.colors.textPrimary,
     textShadowColor: theme.colors.primary,
-    textShadowOffset: { width: 0, height: 4 },
+    textShadowOffset: { width: 0, height: theme.spacing.xs },
     textShadowRadius: 10,
-    fontSize: 64,
+    fontSize: theme.typography.title.fontSize * 1.2,
   },
   titleUnderline: {
-    height: 4,
-    width: 100,
+    height: theme.spacing.xs,
+    width: theme.spacing.xxl * 2,
     backgroundColor: theme.colors.accent,
-    borderRadius: 2,
+    borderRadius: theme.radius.sm / 2,
     marginTop: theme.spacing.sm,
     marginBottom: theme.spacing.md,
   },
   subtitle: {
     ...theme.typography.button,
     color: theme.colors.textSecondary,
-    letterSpacing: 2,
+    letterSpacing: theme.typography.title.letterSpacing,
   },
   buttonGroup: {
     width: '100%',

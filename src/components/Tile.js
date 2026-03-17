@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     width: '18.5%', // Slightly smaller to allow gap
     aspectRatio: 1, 
     borderRadius: theme.radius.sm,
-    borderBottomWidth: 4,
+    borderBottomWidth: theme.spacing.xs,
     overflow: 'hidden',
   },
   content: {
@@ -67,8 +67,8 @@ const styles = StyleSheet.create({
   },
   textMarked: {
     textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: theme.spacing.xs / 2 },
+    textShadowRadius: theme.spacing.xs,
   }
 });
 

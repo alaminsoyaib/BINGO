@@ -104,88 +104,90 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         {!isConnected && (
-          <View style={styles.section}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleBase}>JOIN A ROOM</Text>
-              <TouchableOpacity onPress={() => setInstructionsType('join')} style={styles.helpIconBox}>
-                <Ionicons name="help-circle" size={24} color={theme.colors.accentYellow} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.helpText}>Enter host IP or scan their QR code to join.</Text>
-
-            <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12 }}>
-              <StyledInput
-                style={{ flex: 1, marginBottom: 0, ...theme.typography.body1 }}
-                placeholder="HOST IP (e.g. 192.168.0.10)"
-                value={joinHost}
-                onChangeText={setJoinHost}
-                placeholderTextColor={theme.colors.textSecondary}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                onPress={showScanner}
-                activeOpacity={0.8}
-                style={{
-                  width: 60,
-                  backgroundColor: theme.colors.accent,
-                  borderRadius: theme.radius.lg,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderBottomWidth: 4,
-                  borderColor: '#00A3A0'
-                }}
-              >
-                <MaterialCommunityIcons name="qrcode-scan" size={28} color="#1A1829" />
-              </TouchableOpacity>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12, marginTop: theme.spacing.md }}>
-              <StyledInput
-                style={{ flex: 1, marginBottom: 0, ...theme.typography.body1 }}
-                keyboardType="numeric"
-                value={joinPort}
-                onChangeText={setJoinPort}
-                placeholder="Port"
-                placeholderTextColor={theme.colors.textSecondary}
-              />
-              <View style={{ flex: 1 }}>
-                <GameButton title="JOIN" variant="secondary" onPress={handleJoinRoom} loading={session.status === 'connecting' && session.role === 'client'} />
+          <>
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionTitleBase}>JOIN A ROOM</Text>
+                <TouchableOpacity onPress={() => setInstructionsType('join')} style={styles.helpIconBox}>
+                  <Ionicons name="help-circle" size={theme.icon.md} color={theme.colors.accentYellow} />
+                </TouchableOpacity>
               </View>
-            </View>
+              <Text style={styles.helpText}>Enter host IP or scan their QR code to join.</Text>
 
-            <View style={styles.divider} />
-
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleBase}>HOST A ROOM</Text>
-              <TouchableOpacity onPress={() => setInstructionsType('host')} style={styles.helpIconBox}>
-                <Ionicons name="help-circle" size={24} color={theme.colors.accentYellow} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.helpText}>Host a Local game on your current Wi-Fi network.</Text>
-            <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} loading={session.status === 'connecting' && session.role === 'host'} />
-
-            <View style={styles.advancedToggle}>
-              <GameButton
-                title={advancedVisible ? "HIDE ADVANCED" : "SHOW ADVANCED"}
-                variant="accent"
-                onPress={() => setAdvancedVisible((prev) => !prev)}
-                style={styles.advancedBtn}
-              />
-            </View>
-
-            {advancedVisible && (
-              <View style={styles.advancedCard}>
-                <Text style={styles.label}>HOST PORT (OPTIONAL)</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12 }}>
                 <StyledInput
-                  
+                  style={{ flex: 1, marginBottom: 0, ...theme.typography.body1 }}
+                  placeholder="HOST IP (e.g. 192.168.0.10)"
+                  value={joinHost}
+                  onChangeText={setJoinHost}
+                  placeholderTextColor={theme.colors.textSecondary}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  onPress={showScanner}
+                  activeOpacity={0.8}
+                  style={{
+                    width: theme.spacing.xxl + theme.spacing.sm,
+                    backgroundColor: theme.colors.accent,
+                    borderRadius: theme.radius.lg,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderBottomWidth: theme.spacing.xs,
+                    borderColor: '#00A3A0'
+                  }}
+                >
+                  <MaterialCommunityIcons name="qrcode-scan" size={theme.icon.lg} color="#1A1829" />
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12, marginTop: theme.spacing.md }}>
+                <StyledInput
+                  style={{ flex: 1, marginBottom: 0, ...theme.typography.body1 }}
                   keyboardType="numeric"
-                  value={hostPort}
-                  onChangeText={setHostPort}
+                  value={joinPort}
+                  onChangeText={setJoinPort}
                   placeholder="Port"
                   placeholderTextColor={theme.colors.textSecondary}
                 />
+                <View style={{ flex: 1 }}>
+                  <GameButton title="JOIN" variant="secondary" onPress={handleJoinRoom} loading={session.status === 'connecting' && session.role === 'client'} />
+                </View>
               </View>
-            )}
-          </View>
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.sectionTitleRow}>
+                <Text style={styles.sectionTitleBase}>CREATE A ROOM</Text>
+                <TouchableOpacity onPress={() => setInstructionsType('host')} style={styles.helpIconBox}>
+                  <Ionicons name="help-circle" size={theme.icon.md} color={theme.colors.accentYellow} />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.helpText}>Host a Local game on your current Wi-Fi network.</Text>
+              <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} loading={session.status === 'connecting' && session.role === 'host'} />
+
+              <View style={styles.advancedToggle}>
+                <GameButton
+                  title={advancedVisible ? "HIDE ADVANCED" : "SHOW ADVANCED"}
+                  variant="accent"
+                  onPress={() => setAdvancedVisible((prev) => !prev)}
+                  style={styles.advancedBtn}
+                  textStyle={styles.advancedBtnText}
+                />
+              </View>
+
+              {advancedVisible && (
+                <View style={styles.advancedCard}>
+                  <Text style={styles.label}>HOST PORT (OPTIONAL)</Text>
+                  <StyledInput
+                    keyboardType="numeric"
+                    value={hostPort}
+                    onChangeText={setHostPort}
+                    placeholder="Port"
+                    placeholderTextColor={theme.colors.textSecondary}
+                  />
+                </View>
+              )}
+            </View>
+          </>
         )}
 
         {isConnected && (
@@ -214,7 +216,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               <View style={styles.qrContainer}>
                 <Text style={styles.helpText}>Show this QR code to recruits.</Text>
                 <View style={styles.qrWrapper}>
-                  <QRCode value={`bingo://${session.hostInfo.ip}:${session.hostInfo.port}`} size={160} backgroundColor={theme.colors.surface} color={theme.colors.textPrimary} />
+                  <QRCode value={`bingo://${session.hostInfo.ip}:${session.hostInfo.port}`} size={theme.layout.qrSize} backgroundColor={theme.colors.surface} color={theme.colors.textPrimary} />
                 </View>
               </View>
             )}
@@ -229,7 +231,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               ))}
             </View>
               {isHost && <GameButton title="START" variant="success" onPress={() => { if (session.startGame) session.startGame(); }} style={styles.actionButton} />}
-              <GameButton title="EXIT ROOM" variant="danger" onPress={onBack} style={{ marginTop: theme.spacing.md }} />
+              <GameButton title="EXIT ROOM" variant="danger" onPress={() => { if (session.leaveRoom) session.leaveRoom(); }} style={{ marginTop: theme.spacing.md }} />
           </View>
         )}
 
@@ -244,10 +246,10 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
       <Modal visible={scannerVisible} animationType="fade" onRequestClose={() => setScannerVisible(false)}>
         <View style={styles.scannerContainer}>
           <CameraView style={styles.camera} onBarcodeScanned={handleScan} />
-          <View style={[styles.scannerHeader, { paddingTop: insets.top + 8 }]}> 
+          <View style={[styles.scannerHeader, { paddingTop: insets.top + theme.spacing.sm }]}> 
             <GameButton title="ABORT SCAN" variant="danger" onPress={() => setScannerVisible(false)} style={styles.scannerCloseTop} />
           </View>
-          <View style={[styles.scannerHintBox, { bottom: insets.bottom + 18 }]}>
+          <View style={[styles.scannerHintBox, { bottom: insets.bottom + theme.spacing.md }]}>
             <Text style={styles.scannerHint}>Point your camera at a host's QR code.</Text>
           </View>
         </View>
@@ -273,7 +275,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
                 <Text style={styles.instructionText}>5. Wait for the host to start the game!</Text>
               </ScrollView>
             )}
-            <GameButton title="GOT IT" variant="secondary" onPress={() => setInstructionsType(null)} style={{ marginTop: 20 }} />
+            <GameButton title="GOT IT" variant="secondary" onPress={() => setInstructionsType(null)} style={{ marginTop: theme.spacing.lg }} />
           </View>
         </View>
       </Modal>
@@ -300,6 +302,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     gap: theme.spacing.lg,
     width: '100%',
+    alignItems: 'center',
   },
   section: {
     backgroundColor: theme.colors.surface,
@@ -307,6 +310,9 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     borderWidth: 2,
     borderColor: theme.colors.surfaceLight,
+    width: '100%',
+    maxWidth: theme.layout.maxCardWidth,
+    alignSelf: 'center',
     ...theme.shadows.card,
   },
   sectionTitle: {
@@ -320,7 +326,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: theme.spacing.sm,
-    gap: 8,
+    gap: theme.spacing.sm,
   },
   sectionTitleBase: {
     ...theme.typography.h2,
@@ -328,7 +334,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   helpIconBox: {
-    padding: 2,
+    padding: theme.spacing.xs / 2,
   },
   helpText: {
     ...theme.typography.body2,
@@ -354,7 +360,12 @@ const styles = StyleSheet.create({
     marginVertical: theme.spacing.md,
   },
   advancedBtn: {
-    width: 200,
+    width: 'auto',
+    minWidth: '60%',
+    paddingHorizontal: theme.spacing.lg,
+  },
+  advancedBtnText: {
+    fontSize: theme.typography.body2.fontSize,
   },
   advancedCard: {
     backgroundColor: theme.colors.background,
@@ -474,24 +485,25 @@ const styles = StyleSheet.create({
     top: 0,
     width: '100%',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: theme.spacing.md,
   },
   scannerCloseTop: {
-    width: 200,
+    width: '100%',
   },
   scannerHintBox: {
     position: 'absolute',
-    width: '100%',
-    alignItems: 'center',
+    left: theme.spacing.md,
+    right: theme.spacing.md,
+    backgroundColor: 'rgba(26,24,41,0.82)',
+    borderWidth: 2,
+    borderColor: theme.colors.surfaceLight,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
   },
   scannerHint: {
-    color: '#fff',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    padding: 12,
-    borderRadius: 8,
-    ...theme.typography.body2,
+    ...theme.typography.body1,
+    color: theme.colors.textPrimary,
     textAlign: 'center',
-    overflow: 'hidden',
   },
   modalOverlay: {
     flex: 1,
@@ -516,13 +528,13 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   modalScroll: {
-    maxHeight: 300,
+    maxHeight: theme.spacing.xxl * 6,
   },
   instructionText: {
     ...theme.typography.body1,
     color: theme.colors.textPrimary,
     marginBottom: theme.spacing.sm,
-    lineHeight: 24,
+    lineHeight: theme.typography.body1.fontSize * 1.35,
   }
 });
 

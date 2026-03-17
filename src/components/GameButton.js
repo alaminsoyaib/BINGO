@@ -10,7 +10,8 @@ const GameButton = ({
   disabled = false,
   loading = false,
   icon,
-  style
+  style,
+  textStyle
 }) => {
 
   const getColors = () => {
@@ -43,7 +44,7 @@ const GameButton = ({
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {icon && typeof icon === 'function' ? icon(colors.text) : icon}
-              <Text style={[styles.text, { color: colors.text }]}>{title}</Text>
+              <Text style={[styles.text, { color: colors.text }, textStyle]}>{title}</Text>
             </View>
             {subtitle && <Text style={[styles.subtitle, { color: colors.text }]}>{subtitle}</Text>}
           </>
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    borderBottomWidth: 4, // 3D effect
+    borderBottomWidth: theme.spacing.xs, // 3D effect
   },
   text: {
     ...theme.typography.button,
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
   subtitle: {
     ...theme.typography.body2,
     opacity: 0.8,
-    marginTop: 4,
+    marginTop: theme.spacing.xs,
   }
 });
 

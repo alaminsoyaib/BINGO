@@ -204,7 +204,7 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack }) => {
         <View style={styles.headerWrapper}>
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.backButton} onPress={onBack}>
-              <Ionicons name="arrow-back" size={28} color={theme.colors.textPrimary} />
+              <Ionicons name="arrow-back" size={theme.icon.lg} color={theme.colors.textPrimary} />
             </TouchableOpacity>
             {isOnline && onExitOnline ? (
               <TouchableOpacity style={styles.leaveButton} onPress={onExitOnline}>
@@ -279,23 +279,23 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   backButton: {
-    padding: 8,
+    padding: theme.spacing.sm,
     backgroundColor: 'rgba(45, 42, 67, 0.6)', // subtle circular background for better touch rhythm
-    borderRadius: 20,
+    borderRadius: theme.radius.round,
   },
   placeholder: {
-    width: 40,
+    width: theme.spacing.xl + theme.spacing.xs,
   },
   leaveButton: {
     backgroundColor: theme.colors.danger,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.radius.sm,
     elevation: 3,
   },
   leaveButtonText: {
     color: theme.colors.textPrimary,
-    fontSize: 14,
+    fontSize: theme.typography.body2.fontSize,
     fontWeight: '600',
   },
   boardContainer: {
@@ -306,9 +306,9 @@ const styles = StyleSheet.create({
   bingoContainer: {
     flexDirection: 'row',
     backgroundColor: theme.colors.surface,
-    padding: 8,
-    borderRadius: 8,
-    gap: 8,
+    padding: theme.spacing.sm,
+    borderRadius: theme.radius.sm,
+    gap: theme.spacing.sm,
     marginTop: 5,
     marginBottom: 5,
     shadowColor: '#000',
@@ -323,21 +323,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emojiText: {
-    fontSize: 40,
+    fontSize: theme.typography.title.fontSize,
   },
   letterBox: {
-    width: 48,
-    height: 48,
+    width: theme.spacing.xxl,
+    height: theme.spacing.xxl,
     backgroundColor: theme.colors.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: theme.radius.sm / 2,
   },
   activeLetterBox: {
     backgroundColor: theme.colors.success,
   },
   letterText: {
-    fontSize: 24,
+    fontSize: theme.typography.h2.fontSize,
     fontWeight: 'bold',
     color: theme.colors.textSecondary,
   },

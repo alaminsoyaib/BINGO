@@ -1,3 +1,7 @@
+import { rs, rvs, clamp, windowSize } from './utils/responsive';
+
+const { width: screenWidth } = windowSize();
+
 export const theme = {
   colors: {
     background: '#1A1829',     // Deep space/dark purple
@@ -23,68 +27,78 @@ export const theme = {
     // ...
     title: {
       fontFamily: 'sans-serif',
-      fontSize: 48,
+      fontSize: rs(48, 36, 60),
       fontWeight: '900',
       textTransform: 'uppercase',
-      letterSpacing: 2,
+      letterSpacing: rs(2, 1, 3),
     },
     h1: {
       fontFamily: 'sans-serif',
-      fontSize: 32,
+      fontSize: rs(32, 24, 40),
       fontWeight: '800',
     },
     h2: {
       fontFamily: 'sans-serif',
-      fontSize: 24,
+      fontSize: rs(24, 18, 30),
       fontWeight: 'bold',
     },
     body1: {
       fontFamily: 'sans-serif',
-      fontSize: 18,
+      fontSize: rs(18, 14, 22),
       fontWeight: '600',
     },
     body2: {
       fontFamily: 'sans-serif',
-      fontSize: 16,
+      fontSize: rs(16, 13, 20),
       fontWeight: '500',
     },
     button: {
       fontFamily: 'sans-serif',
-      fontSize: 18,
+      fontSize: rs(18, 14, 22),
       fontWeight: 'bold',
       textTransform: 'uppercase',
-      letterSpacing: 1,
+      letterSpacing: rs(1, 0.5, 2),
     }
   },
   spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
+    xs: rs(4, 3, 6),
+    sm: rs(8, 6, 11),
+    md: rs(16, 12, 20),
+    lg: rs(24, 16, 30),
+    xl: rs(32, 22, 40),
+    xxl: rs(48, 32, 56),
+  },
+  layout: {
+    maxContentWidth: clamp(screenWidth, 360, 860),
+    maxCardWidth: clamp(screenWidth * 0.96, 320, 740),
+    qrSize: clamp(screenWidth * 0.42, 130, 190),
+  },
+  icon: {
+    sm: rs(18, 16, 22),
+    md: rs(24, 20, 28),
+    lg: rs(28, 24, 34),
   },
   radius: {
-    sm: 8,
-    md: 12,
-    lg: 20,
-    xl: 30,
+    sm: rs(8, 6, 12),
+    md: rs(12, 9, 16),
+    lg: rs(20, 14, 24),
+    xl: rs(30, 20, 36),
     round: 9999,
   },
   shadows: {
     button: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: { width: 0, height: rvs(4, 2, 6) },
       shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 6,
+      shadowRadius: rs(4, 2, 6),
+      elevation: rs(6, 4, 10),
     },
     card: {
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
+      shadowOffset: { width: 0, height: rvs(8, 4, 10) },
       shadowOpacity: 0.5,
-      shadowRadius: 8,
-      elevation: 8,
+      shadowRadius: rs(8, 5, 12),
+      elevation: rs(8, 5, 12),
     }
   }
 };
