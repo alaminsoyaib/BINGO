@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { BackHandler, Text, TextInput } from 'react-native';
+import { BackHandler, Text, TextInput, LayoutAnimation, UIManager, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 // Set global custom font styles to bypass system fonts on Android devices like Samsung
 if (Text.defaultProps == null) {
@@ -45,6 +49,10 @@ export default function App() {
 
   const activeSession = mode === 'online' ? localSession : mode === 'cloud' ? cloudSession : null;
 
+  const smoothTransition = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  };
+
   useEffect(() => {
     const bootstrapName = async () => {
       try {
@@ -79,6 +87,7 @@ export default function App() {
   }, [persistPlayerName]);
 
   const handleSelectMode = useCallback((nextMode) => {
+    smoothTransition();
     setMode(nextMode);
     setScreen(nextMode === 'online' || nextMode === 'cloud' ? 'lobby' : 'game');
   }, []);
@@ -87,45 +96,52 @@ export default function App() {
     if (mode === 'online' || mode === 'cloud') {
       activeSession?.leaveRoom();
     }
+    smoothTransition();
     setMode(null);
     setScreen('mode');
   }, [activeSession, mode]);
 
   const handleEnterGame = useCallback(() => {
+    smoothTransition();
     setScreen('game');
   }, []);
 
   const handleBackFromGame = useCallback(() => {
     if (mode === 'online' || mode === 'cloud') {
+      smoothTransition();
       setScreen('lobby');
       return;
     }
+    smoothTransition();
     setMode(null);
     setScreen('mode');
   }, [mode]);
 
   const handleExitOnline = useCallback(() => {
     activeSession?.leaveRoom();
+    smoothTransition();
     setMode(null);
     setScreen('mode');
   }, [activeSession]);
 
+  const handleReturnToLobby = useCallback(() => {
+    smoothTransition();
+    setScreen('lobby');
+  }, []);
+
   useEffect(() => {
     const onBackPress = () => {
-      if (screen === 'game') {
-        handleBackFromGame();
-        return true;
-      }
       if (screen === 'lobby') {
         handleBackToMode();
         return true;
       }
+      // Let other screens (like BingoScreen) handle their own back actions natively
       return false;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
-  }, [screen, handleBackFromGame, handleBackToMode]);
+  }, [screen, handleBackToMode]);
 
   return (
     <SafeAreaProvider>
@@ -163,6 +179,7 @@ export default function App() {
           mode={mode || 'offline'}
           session={activeSession}
           onExitOnline={(mode === 'online' || mode === 'cloud') ? handleExitOnline : null}
+          onReturnToLobby={handleReturnToLobby}
           onBack={handleBackFromGame}
         />
       )}

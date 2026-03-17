@@ -5,9 +5,9 @@ import { theme } from '../theme';
 import GameButton from './GameButton';
 
 const Controls = ({ isSetupPhase, onAutoFill, onRestart, onUndo, canUndo, hasStarted, mode, canRestart }) => {
-  const isOnline = mode === 'online';
+  const isOnline = mode === 'online' || mode === 'cloud';
   const showUndo = !isOnline && canUndo;
-  const restartDisabled = isOnline && !canRestart;
+  const showRestart = !isOnline || canRestart;
 
   return (
     <View style={styles.container}>
@@ -18,31 +18,31 @@ const Controls = ({ isSetupPhase, onAutoFill, onRestart, onUndo, canUndo, hasSta
             variant="accent" 
             onPress={onAutoFill} 
           />
-          {hasStarted && (
+          {hasStarted && showRestart && (
             <GameButton 
-              title="RESTART" 
+              title={isOnline ? "PLAY AGAIN" : "RESTART"} 
               variant="danger" 
               onPress={onRestart} 
-              disabled={restartDisabled}
             />
           )}
         </View>
       ) : (
         <View style={styles.row}>
-          <View style={styles.flexBtn}>
-            <GameButton 
-              title="RESTART" 
-              variant="danger" 
-              onPress={onRestart} 
-              disabled={restartDisabled}
-            />
-          </View>
+          {showRestart && (
+            <View style={styles.flexBtn}>
+              <GameButton 
+                title={isOnline ? "PLAY AGAIN" : "RESTART"} 
+                variant="danger" 
+                onPress={onRestart} 
+              />
+            </View>
+          )}
           {showUndo && (
             <View style={styles.flexBtn}>
               <GameButton
                 title="UNDO"
                 variant="secondary"
-                icon={(color) => <MaterialCommunityIcons name="undo" size={24} color={color} />}
+                icon={(color) => <MaterialCommunityIcons name="undo" size={theme.icon.md} color={color} />}
                 onPress={onUndo}
               />
             </View>

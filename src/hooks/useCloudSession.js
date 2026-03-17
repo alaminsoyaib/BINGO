@@ -26,8 +26,7 @@ const initialState = {
   currentTurnPlayerId: null,
   calledNumbers: [],
   lastCalledNumber: null,
-  localReady: false,
-  winnerId: null,
+  winners: [],
   resetCounter: 0,
   error: null
 };
@@ -76,9 +75,8 @@ export const useCloudSession = () => {
       currentTurnPlayerId: game.currentTurnPlayerId ?? null,
       calledNumbers: game.calledNumbers || [],
       lastCalledNumber: game.lastCalledNumber ?? null,
-      winnerId: game.winnerId ?? null,
+      winners: game.winners || [],
       resetCounter: game.resetCounter ?? 0,
-      localReady: localPlayer ? !!localPlayer.ready : prev.localReady,
       error: null
     }));
   };
@@ -102,31 +100,51 @@ export const useCloudSession = () => {
         return;
       }
       syncFromRoom(roomCode, roomData);
+
+      const players = Object.values(roomData.players || {});
+      const isHost = roomData.hostId === stateRef.current.playerId;
+      const allReady = players.length >= 2 && players.every(p => p.ready);
+
+      if (isHost && allReady && !roomData.game?.inGame) {
+        startGame();
+      }
     });
   };
 
-  const attemptAutoStart = async () => {
+  const setPlayerReady = async (isReady) => {
+    if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
+    const playerRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}/players/${stateRef.current.playerId}`);
+    await update(playerRef, { ready: isReady });
+  };
+
+  const startGame = async () => {
     if (!roomRefRef.current) return;
 
     await runTransaction(roomRefRef.current, (room) => {
       if (!room) return room;
       const players = Object.values(room.players || {});
-      if (room.game?.inGame || players.length < 2 || !players.every((player) => player.ready)) {
+      if (room.game?.inGame || players.length < 2) {
         return room;
       }
 
       const startIndex = Math.floor(Math.random() * players.length);
       const startPlayerId = players[startIndex]?.id ?? null;
 
+      const resetPlayers = {};
+      players.forEach(p => {
+        resetPlayers[p.id] = { ...p, ready: false };
+      });
+
       return {
         ...room,
+        players: resetPlayers,
         game: {
           ...(room.game || {}),
           inGame: true,
           currentTurnPlayerId: startPlayerId,
           calledNumbers: [],
           lastCalledNumber: null,
-          winnerId: null,
+          winners: [],
           resetCounter: room.game?.resetCounter ?? 0
         }
       };
@@ -148,7 +166,7 @@ export const useCloudSession = () => {
         [playerId]: {
           id: playerId,
           name,
-          ready: false
+          ready: true
         }
       },
       game: {
@@ -156,7 +174,7 @@ export const useCloudSession = () => {
         currentTurnPlayerId: null,
         calledNumbers: [],
         lastCalledNumber: null,
-        winnerId: null,
+        winners: [],
         resetCounter: 0
       }
     });
@@ -229,15 +247,6 @@ export const useCloudSession = () => {
     }
   };
 
-  const sendReady = async () => {
-    const playerRef = playerRefRef.current;
-    if (!playerRef) return;
-
-    await update(playerRef, { ready: true });
-    setState((prev) => ({ ...prev, localReady: true }));
-    await attemptAutoStart();
-  };
-
   const sendCall = async (number) => {
     const { roomCode, playerId } = stateRef.current;
     if (!roomCode || !playerId) return;
@@ -245,7 +254,7 @@ export const useCloudSession = () => {
     const roomRef = ref(database, `${ROOMS_ROOT}/${roomCode}`);
 
     await runTransaction(roomRef, (room) => {
-      if (!room || !room.game?.inGame || room.game?.winnerId) return room;
+      if (!room || !room.game?.inGame || (room.game?.winners && room.game?.winners.length > 0)) return room;
       if (room.game.currentTurnPlayerId !== playerId) return room;
 
       const calledNumbers = room.game.calledNumbers || [];
@@ -275,20 +284,15 @@ export const useCloudSession = () => {
     await runTransaction(roomRef, (room) => {
       if (!room) return room;
 
-      const players = Object.fromEntries(
-        Object.entries(room.players || {}).map(([id, player]) => [id, { ...player, ready: false }])
-      );
-
       return {
         ...room,
-        players,
         game: {
           ...(room.game || {}),
           inGame: false,
           calledNumbers: [],
           lastCalledNumber: null,
           currentTurnPlayerId: null,
-          winnerId: null,
+          winners: [],
           resetCounter: (room.game?.resetCounter || 0) + 1
         }
       };
@@ -302,12 +306,15 @@ export const useCloudSession = () => {
     const roomRef = ref(database, `${ROOMS_ROOT}/${roomCode}`);
 
     await runTransaction(roomRef, (room) => {
-      if (!room || room.game?.winnerId) return room;
+      if (!room) return room;
+      const currentWinners = room.game?.winners || [];
+      if (currentWinners.includes(playerId)) return room;
+      
       return {
         ...room,
         game: {
           ...(room.game || {}),
-          winnerId: playerId,
+          winners: [...currentWinners, playerId],
           inGame: false
         }
       };
@@ -333,10 +340,10 @@ export const useCloudSession = () => {
     createRoom,
     joinRoom,
     leaveRoom,
-    startGame: attemptAutoStart,
-    sendReady,
+    startGame,
     sendCall,
     sendReset,
-    sendWin
+    sendWin,
+    setPlayerReady
   };
 };

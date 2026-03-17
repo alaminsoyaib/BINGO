@@ -42,7 +42,7 @@ const GameButton = ({
           <ActivityIndicator color={colors.text} size="small" />
         ) : (
           <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: theme.icon.md }}>
               {icon && typeof icon === 'function' ? icon(colors.text) : icon}
               <Text style={[styles.text, { color: colors.text }, textStyle]}>{title}</Text>
             </View>

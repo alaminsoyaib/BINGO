@@ -28,6 +28,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
   const isConnected = session.status === 'connected';
   const isHost = session.role === 'host';
   const displayName = playerName.trim() || savedPlayerName?.trim() || (isHost ? 'Host' : 'Player');
+  const localPlayer = session.players?.find(p => p.id === session.playerId);
 
   useEffect(() => {
     setPlayerName(savedPlayerName || '');
@@ -212,9 +213,9 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
                 )}
               </View>
             )}
-            {isHost && session.hostInfo && (
+            {session.hostInfo && (
               <View style={styles.qrContainer}>
-                <Text style={styles.helpText}>Show this QR code to recruits.</Text>
+                <Text style={styles.helpText}>Scan to join this room.</Text>
                 <View style={styles.qrWrapper}>
                   <QRCode value={`bingo://${session.hostInfo.ip}:${session.hostInfo.port}`} size={theme.layout.qrSize} backgroundColor={theme.colors.surface} color={theme.colors.textPrimary} />
                 </View>
@@ -226,12 +227,26 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               {session.players.map((player) => (
                 <View key={player.id} style={styles.playerItem}>
                   <Text style={styles.playerItemText}>• {player.name}</Text>
-
+                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
+                    {player.ready ? 'READY' : 'WAITING'}
+                  </Text>
                 </View>
               ))}
             </View>
-              {isHost && <GameButton title="START" variant="success" onPress={() => { if (session.startGame) session.startGame(); }} style={styles.actionButton} />}
-              <GameButton title="EXIT ROOM" variant="danger" onPress={() => { if (session.leaveRoom) session.leaveRoom(); }} style={{ marginTop: theme.spacing.md }} />
+            <View style={styles.actionRow}>
+              {isHost ? (
+                <GameButton title="START" variant="success" onPress={() => { if (session.startGame) session.startGame(); }} style={styles.halfBtn} />
+              ) : (
+                <GameButton 
+                 title={localPlayer?.ready ? "READY!" : "MARK READY"} 
+                 variant={localPlayer?.ready ? "secondary" : "success"}
+                 disabled={localPlayer?.ready}
+                 onPress={() => { if (session.setPlayerReady) session.setPlayerReady(true); }}
+                 style={styles.halfBtn}
+               />
+              )}
+              <GameButton title="EXIT ROOM" variant="danger" onPress={() => { if (session.leaveRoom) session.leaveRoom(); }} style={styles.halfBtn} />
+            </View>
           </View>
         )}
 
@@ -260,19 +275,49 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
             <Text style={styles.modalTitle}>{instructionsType === 'host' ? 'HOW TO HOST' : 'HOW TO JOIN'}</Text>
             {instructionsType === 'host' ? (
               <ScrollView style={styles.modalScroll}>
-                <Text style={styles.instructionText}>1. Ensure you are connected to a Wi-Fi network or mobile hotspot.</Text>
-                <Text style={styles.instructionText}>2. Tap 'CREATE ROOM' to host the game on your device.</Text>
-                <Text style={styles.instructionText}>3. Once created, a QR Code and your IP Address will be displayed.</Text>
-                <Text style={styles.instructionText}>4. Other players can scan the QR code or manually enter the IP to join.</Text>
-                <Text style={styles.instructionText}>5. Wait for players to join and then start the game!</Text>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>1.</Text>
+                  <Text style={styles.instructionText}>Ensure you are connected to a Wi-Fi network or mobile hotspot.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>2.</Text>
+                  <Text style={styles.instructionText}>Tap 'CREATE ROOM' to host the game on your device.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>3.</Text>
+                  <Text style={styles.instructionText}>Once created, a QR Code and your IP Address will be displayed.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>4.</Text>
+                  <Text style={styles.instructionText}>Other players can scan the QR code or manually enter the IP to join.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>5.</Text>
+                  <Text style={styles.instructionText}>Wait for players to join and then start the game!</Text>
+                </View>
               </ScrollView>
             ) : (
               <ScrollView style={styles.modalScroll}>
-                <Text style={styles.instructionText}>1. Ensure you are connected to a Wi-Fi network or mobile hotspot.</Text>
-                <Text style={styles.instructionText}>2. Tap the QR Code icon to scan the host's screen.</Text>
-                <Text style={styles.instructionText}>3. Alternatively, enter the host's IP Address manually.</Text>
-                <Text style={styles.instructionText}>4. Tap 'JOIN' to enter the room.</Text>
-                <Text style={styles.instructionText}>5. Wait for the host to start the game!</Text>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>1.</Text>
+                  <Text style={styles.instructionText}>Ensure you are connected to a Wi-Fi network or mobile hotspot.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>2.</Text>
+                  <Text style={styles.instructionText}>Tap the QR Code icon to scan the host's screen.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>3.</Text>
+                  <Text style={styles.instructionText}>Alternatively, enter the host's IP Address manually.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>4.</Text>
+                  <Text style={styles.instructionText}>Tap 'JOIN' to enter the room.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>5.</Text>
+                  <Text style={styles.instructionText}>Wait for the host to start the game!</Text>
+                </View>
               </ScrollView>
             )}
             <GameButton title="GOT IT" variant="secondary" onPress={() => setInstructionsType(null)} style={{ marginTop: theme.spacing.lg }} />
@@ -452,14 +497,28 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
   },
   playerStatus: {
-    ...theme.typography.body2,
+    ...theme.typography.caption,
     fontWeight: 'bold',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.radius.sm,
+    overflow: 'hidden',
   },
   statusReady: {
+    backgroundColor: 'rgba(0, 255, 65, 0.2)',
     color: theme.colors.success,
   },
   statusWaiting: {
-    color: theme.colors.warning,
+    backgroundColor: 'rgba(255, 204, 0, 0.2)',
+    color: theme.colors.accentYellow,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.md,
+  },
+  halfBtn: {
+    flex: 1,
   },
   errorBox: {
     backgroundColor: 'rgba(214, 48, 49, 0.2)',
@@ -530,10 +589,22 @@ const styles = StyleSheet.create({
   modalScroll: {
     maxHeight: theme.spacing.xxl * 6,
   },
-  instructionText: {
+  listItem: {
+    flexDirection: 'row',
+    marginBottom: theme.spacing.md,
+    alignItems: 'flex-start',
+  },
+  listNumber: {
     ...theme.typography.body1,
     color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
+    lineHeight: theme.typography.body1.fontSize * 1.35,
+    marginRight: theme.spacing.sm,
+    minWidth: 16,
+  },
+  instructionText: {
+    flex: 1,
+    ...theme.typography.body1,
+    color: theme.colors.textPrimary,
     lineHeight: theme.typography.body1.fontSize * 1.35,
   }
 });

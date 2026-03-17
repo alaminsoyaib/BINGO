@@ -71,11 +71,10 @@ export const useLanSession = () => {
 
   const updateState = (updater) => {
     if (!isMountedRef.current) return;
-    setState((prev) => {
-      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
-      stateRef.current = next;
-      return next;
-    });
+    const prev = stateRef.current;
+    const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+    stateRef.current = next;
+    setState(next);
   };
 
   const broadcast = (message) => {
@@ -135,7 +134,7 @@ export const useLanSession = () => {
       return;
     }
 
-    const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
+const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
     updateState((prev) => ({
       ...prev,
       calledNumbers: [...prev.calledNumbers, number],
@@ -161,7 +160,8 @@ export const useLanSession = () => {
       currentTurnPlayerId: startingPlayerId,
       calledNumbers: [],
       lastCalledNumber: null,
-      winnerId: null
+      winnerId: null,
+      players: prev.players.map(p => ({ ...p, ready: false }))
     }));
     broadcast({ type: 'start', currentTurnPlayerId: startingPlayerId });
     broadcastState();

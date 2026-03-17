@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, Share, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, BackHandler, Alert } from 'react-native';
+import { View, Text, StyleSheet, Modal, Share, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Clipboard from 'expo-clipboard';
@@ -12,6 +12,7 @@ import GameButton from '../components/GameButton';
 import PlayerSettingsModal from '../components/PlayerSettingsModal';
 import ScreenHeader from '../components/ScreenHeader';
 import StyledInput from '../components/StyledInput';
+import CustomAlert from '../components/CustomAlert';
 
 const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlayerName, onPlayerNameChange }) => {
   const insets = useSafeAreaInsets();
@@ -20,11 +21,13 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
   const [scannerVisible, setScannerVisible] = useState(false);
   const [instructionsType, setInstructionsType] = useState(null); // 'host' | 'join'
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'info', icon: 'information-circle' });
   const [permission, requestPermission] = useCameraPermissions();
 
   const isConnected = session.status === 'connected';
   const isHost = session.role === 'host';
   const displayName = playerName.trim() || savedPlayerName?.trim() || 'Player';
+  const localPlayer = session.players?.find(p => p.id === session.playerId);
 
   useEffect(() => {
     setPlayerName(savedPlayerName || '');
@@ -63,7 +66,13 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
   const copyRoomCode = async () => {
     if (!session.roomCode) return;
     await Clipboard.setStringAsync(session.roomCode);
-    Alert.alert('Copied', 'Room code copied to clipboard.');
+    setAlertConfig({
+      visible: true,
+      title: 'Copied!',
+      message: 'Room code copied to clipboard.',
+      type: 'success',
+      icon: 'checkmark-circle'
+    });
   };
 
   const handleScan = ({ data }) => {
@@ -129,7 +138,7 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
                   <Ionicons name="qr-code-outline" size={theme.icon.lg} color="#1A1829" />
                 </TouchableOpacity>
               </View>
-              <GameButton title="JOIN ROOM" variant="secondary" onPress={handleJoinRoom} style={styles.actionButton} />
+              <GameButton title="JOIN ROOM" variant="secondary" onPress={handleJoinRoom} style={styles.actionButton} loading={session.status === 'connecting' && session.role === 'client'} />
             </View>
 
             <View style={styles.section}>
@@ -140,7 +149,7 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
                 </TouchableOpacity>
               </View>
               <Text style={styles.helpText}>Host a game for anyone, anywhere.</Text>
-              <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} />
+              <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} loading={session.status === 'connecting' && session.role === 'host'} />
             </View>
           </>
         )}
@@ -151,9 +160,7 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
             <View style={styles.roomCodeContainer}>
               <Text style={styles.roomCode}>{session.roomCode}</Text>
             </View>
-            {isHost && (
-              <GameButton title="COPY CODE" variant="accent" onPress={copyRoomCode} style={styles.copyButton} />
-            )}
+            <GameButton title="COPY CODE" variant="accent" onPress={copyRoomCode} style={styles.copyButton} />
 
             <View style={styles.playerList}>
               <Text style={styles.listHeader}>PLAYERS ({session.players.length})</Text>
@@ -175,13 +182,19 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
 
             <View style={styles.actionRow}>
               <GameButton title="SHARE" variant="secondary" onPress={shareInvite} style={styles.halfBtn} />
-              <GameButton title={isHost ? "START" : "READY"} variant="success" onPress={() => {
-                if (isHost) {
+              {isHost ? (
+                <GameButton title="START" variant="success" onPress={() => {
                   if (session.startGame) session.startGame();
-                } else {
-                  if (session.sendReady) session.sendReady();
-                }
-              }} style={styles.halfBtn} />
+                }} style={styles.halfBtn} />
+              ) : (
+                <GameButton 
+                 title={localPlayer?.ready ? "READY!" : "MARK READY"} 
+                 variant={localPlayer?.ready ? "secondary" : "success"}
+                 disabled={localPlayer?.ready}
+                 onPress={() => { if (session.setPlayerReady) session.setPlayerReady(true); }}
+                 style={styles.halfBtn}
+               />
+              )}
             </View>
             <GameButton title="EXIT ROOM" variant="danger" onPress={() => { if (session.leaveRoom) session.leaveRoom(); }} style={{ marginTop: theme.spacing.md }} />
           </View>
@@ -220,15 +233,33 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
             <Text style={styles.modalTitle}>{instructionsType === 'host' ? 'HOW TO CREATE' : 'HOW TO JOIN'}</Text>
             {instructionsType === 'host' ? (
               <ScrollView style={styles.modalScroll}>
-                <Text style={styles.instructionText}>1. Tap 'CREATE ROOM' to create a 4-character room code.</Text>
-                <Text style={styles.instructionText}>2. Share or copy the code for other players.</Text>
-                <Text style={styles.instructionText}>3. Wait for everyone to join, then start the game.</Text>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>1.</Text>
+                  <Text style={styles.instructionText}>Tap 'CREATE ROOM' to create a 4-character room code.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>2.</Text>
+                  <Text style={styles.instructionText}>Share or copy the code for other players.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>3.</Text>
+                  <Text style={styles.instructionText}>Wait for everyone to join, then start the game.</Text>
+                </View>
               </ScrollView>
             ) : (
               <ScrollView style={styles.modalScroll}>
-                <Text style={styles.instructionText}>1. Enter the 4-character code and tap 'JOIN ROOM'.</Text>
-                <Text style={styles.instructionText}>2. Or use the QR button to scan host QR and auto-join.</Text>
-                <Text style={styles.instructionText}>3. Once connected, tap READY and wait for the host.</Text>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>1.</Text>
+                  <Text style={styles.instructionText}>Enter the 4-character code and tap 'JOIN ROOM'.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>2.</Text>
+                  <Text style={styles.instructionText}>Or use the QR button to scan host QR and auto-join.</Text>
+                </View>
+                <View style={styles.listItem}>
+                  <Text style={styles.listNumber}>3.</Text>
+                  <Text style={styles.instructionText}>Once connected, wait for the host to start the game.</Text>
+                </View>
               </ScrollView>
             )}
             <GameButton title="GOT IT" variant="secondary" onPress={() => setInstructionsType(null)} style={{ marginTop: theme.spacing.lg }} />
@@ -236,6 +267,14 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
         </View>
       </Modal>
 
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        icon={alertConfig.icon}
+        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+      />
       </ScreenWrapper>
   );
 };
@@ -369,14 +408,20 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
   },
   playerStatus: {
-    ...theme.typography.body2,
+    ...theme.typography.caption,
     fontWeight: 'bold',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 2,
+    borderRadius: theme.radius.sm,
+    overflow: 'hidden',
   },
   statusReady: {
+    backgroundColor: 'rgba(0, 255, 65, 0.2)',
     color: theme.colors.success,
   },
   statusWaiting: {
-    color: theme.colors.warning,
+    backgroundColor: 'rgba(255, 204, 0, 0.2)',
+    color: theme.colors.accentYellow,
   },
   qrContainer: {
     alignItems: 'center',
@@ -431,10 +476,22 @@ const styles = StyleSheet.create({
   modalScroll: {
     maxHeight: theme.spacing.xxl * 5,
   },
-  instructionText: {
+  listItem: {
+    flexDirection: 'row',
+    marginBottom: theme.spacing.md,
+    alignItems: 'flex-start',
+  },
+  listNumber: {
     ...theme.typography.body1,
     color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.md,
+    lineHeight: theme.typography.body1.fontSize * 1.35,
+    marginRight: theme.spacing.sm,
+    minWidth: 16,
+  },
+  instructionText: {
+    flex: 1,
+    ...theme.typography.body1,
+    color: theme.colors.textPrimary,
     lineHeight: theme.typography.body1.fontSize * 1.35,
   },
   scannerContainer: {
