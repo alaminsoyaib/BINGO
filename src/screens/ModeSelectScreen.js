@@ -1,22 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TextInput, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
+import PlayerSettingsModal from '../components/PlayerSettingsModal';
 
 const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [draftName, setDraftName] = useState(currentName || '');
 
-  useEffect(() => {
-    setDraftName(currentName || '');
-  }, [currentName]);
 
-  const handleSave = async () => {
-    const value = draftName.trim();
-    if (!value) return;
-    await onSaveName(value);
+  const handleSave = async (newName) => {
+    if (!newName) return;
+    await onSaveName(newName);
     setSettingsVisible(false);
   };
 
@@ -70,27 +66,12 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
         </View>
       </View>
 
-      <Modal visible={settingsVisible} transparent animationType="slide" onRequestClose={() => setSettingsVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>PLAYER PROFILE</Text>
-            <Text style={styles.modalHint}>Enter your display name for multiplayer games.</Text>
-            <TextInput
-              style={styles.nameInput}
-              value={draftName}
-              onChangeText={setDraftName}
-              placeholder="Enter player name"
-              placeholderTextColor={theme.colors.textSecondary}
-              maxLength={16}
-              autoCapitalize="characters"
-            />
-            <View style={styles.modalActions}>
-              <GameButton title="CANCEL" variant="danger" onPress={() => setSettingsVisible(false)} style={styles.modalBtn} />
-              <GameButton title="SAVE" variant="success" onPress={handleSave} style={styles.modalBtn} />
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <PlayerSettingsModal 
+        visible={settingsVisible} 
+        onClose={() => setSettingsVisible(false)} 
+        onSave={handleSave} 
+        initialName={currentName} 
+      />
     </SafeAreaView>
   );
 };
@@ -177,52 +158,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.lg,
-  },
-  modalCard: {
-    width: '100%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
-    padding: theme.spacing.lg,
-    borderWidth: 4,
-    borderColor: theme.colors.surfaceLight,
-  },
-  modalTitle: {
-    ...theme.typography.h2,
-    color: theme.colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  modalHint: {
-    ...theme.typography.body2,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  nameInput: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    color: theme.colors.textPrimary,
-    ...theme.typography.h2,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: theme.spacing.md,
-  },
-  modalBtn: {
-    flex: 1,
-  },
+  }
 });
 
 export default ModeSelectScreen;

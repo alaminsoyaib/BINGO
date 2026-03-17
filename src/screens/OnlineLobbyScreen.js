@@ -6,6 +6,7 @@ import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-ico
 import QRCode from 'react-native-qrcode-svg';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
+import PlayerSettingsModal from '../components/PlayerSettingsModal';
 
 const DEFAULT_PORT = 5050;
 
@@ -35,11 +36,12 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
     }
   }, [session.inGame, onEnterGame]);
 
-  const handleNameSave = async () => {
-    if (!onPlayerNameChange) return;
-    const nextName = playerName.trim();
-    if (nextName) {
-      await onPlayerNameChange(nextName);
+  const handleNameSave = async (newName) => {
+    if (newName) {
+      setPlayerName(newName);
+      if (onPlayerNameChange) {
+        await onPlayerNameChange(newName);
+      }
     }
     setSettingsVisible(false);
   };
@@ -284,32 +286,12 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
         </View>
       </Modal>
 
-      <Modal visible={settingsVisible} animationType="fade" transparent={true} onRequestClose={() => setSettingsVisible(false)}>
-        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>SETTINGS</Text>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>YOUR NAME</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Player name"
-                  value={playerName}
-                  onChangeText={setPlayerName}
-                  placeholderTextColor={theme.colors.textSecondary}
-                  maxLength={16}
-                  autoCapitalize="characters"
-                />
-              </View>
-              <GameButton title="SAVE" variant="primary" onPress={handleNameSave} style={{ marginTop: 10 }} />
-              <GameButton title="CANCEL" variant="secondary" onPress={() => {
-                setPlayerName(savedPlayerName || '');
-                setSettingsVisible(false);
-              }} style={{ marginTop: 10 }} />
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+      <PlayerSettingsModal
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
+        onSave={handleNameSave}
+        initialName={playerName}
+      />
 
       </View>
     </SafeAreaView>
