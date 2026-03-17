@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { theme } from '../theme';
 import GameButton from './GameButton';
+import StyledInput from './StyledInput';
 
 const PlayerSettingsModal = ({ visible, onClose, onSave, initialName }) => {
   const [playerName, setPlayerName] = useState(initialName || '');
@@ -25,8 +26,8 @@ const PlayerSettingsModal = ({ visible, onClose, onSave, initialName }) => {
             
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>YOUR NAME</Text>
-              <TextInput
-                style={styles.input}
+              <StyledInput
+                
                 placeholder="Player name"
                 value={playerName}
                 onChangeText={setPlayerName}
@@ -83,16 +84,6 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
     textAlign: 'center',
   },
-  input: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    color: theme.colors.textPrimary,
-    ...theme.typography.h2,
-    textAlign: 'center',
-  },
-});
+  });
 
 export default PlayerSettingsModal;

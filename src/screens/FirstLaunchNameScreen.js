@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet } from 'react-native';
+
+import ScreenWrapper from '../components/ScreenWrapper';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
+import StyledInput from '../components/StyledInput';
 
 const FirstLaunchNameScreen = ({ onContinue, suggestedName }) => {
   const [name, setName] = useState('');
@@ -16,9 +18,7 @@ const FirstLaunchNameScreen = ({ onContinue, suggestedName }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.container}>
+    <ScreenWrapper style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>BINGO</Text>
           <Text style={styles.subtitle}>PLAYER SETUP</Text>
@@ -26,8 +26,8 @@ const FirstLaunchNameScreen = ({ onContinue, suggestedName }) => {
 
         <View style={styles.card}>
           <Text style={styles.label}>ENTER CODENAME</Text>
-          <TextInput
-            style={styles.input}
+          <StyledInput
+            
             value={name}
             onChangeText={setName}
             placeholder={suggestedName}
@@ -52,16 +52,11 @@ const FirstLaunchNameScreen = ({ onContinue, suggestedName }) => {
             />
           </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   container: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
@@ -100,17 +95,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     textAlign: 'center',
     marginBottom: theme.spacing.md,
-  },
-  input: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    color: theme.colors.textPrimary,
-    ...theme.typography.h2,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
   },
   helper: {
     ...theme.typography.body2,

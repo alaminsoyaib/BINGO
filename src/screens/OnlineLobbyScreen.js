@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Modal, BackHandler, ScrollView, StatusBar, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Modal, BackHandler, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
 import PlayerSettingsModal from '../components/PlayerSettingsModal';
+import ScreenHeader from '../components/ScreenHeader';
+import StyledInput from '../components/StyledInput';
 
 const DEFAULT_PORT = 5050;
 
@@ -91,23 +94,12 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
   }, [scannerVisible]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.container}>
-        <View style={styles.headerWrapper}>
-          <View style={styles.topBar}>
-            <TouchableOpacity style={styles.backButtonIcon} onPress={onBack}>
-              <Ionicons name="arrow-back" size={28} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.settingsButtonIcon}
-              onPress={() => setSettingsVisible(true)}
-            >
-              <Ionicons name="settings-sharp" size={24} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.screenTitle}>{isHost ? 'LOCAL HOST' : 'LOCAL NETWORK'}</Text>
-        </View>
+    <ScreenWrapper>
+          <ScreenHeader
+            title={isHost ? 'LOCAL HOST' : 'LOCAL NETWORK'}
+            onBack={onBack}
+            onSettings={() => setSettingsVisible(true)}
+          />
 
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
@@ -122,8 +114,8 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
             <Text style={styles.helpText}>Enter host IP or scan their QR code to join.</Text>
 
             <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12 }}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0, ...theme.typography.body1 }]}
+              <StyledInput
+                style={{ flex: 1, marginBottom: 0, ...theme.typography.body1 }}
                 placeholder="HOST IP (e.g. 192.168.0.10)"
                 value={joinHost}
                 onChangeText={setJoinHost}
@@ -147,8 +139,8 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               </TouchableOpacity>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12, marginTop: theme.spacing.md }}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0, ...theme.typography.body1  }]}
+              <StyledInput
+                style={{ flex: 1, marginBottom: 0, ...theme.typography.body1 }}
                 keyboardType="numeric"
                 value={joinPort}
                 onChangeText={setJoinPort}
@@ -183,8 +175,8 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
             {advancedVisible && (
               <View style={styles.advancedCard}>
                 <Text style={styles.label}>HOST PORT (OPTIONAL)</Text>
-                <TextInput
-                  style={styles.input}
+                <StyledInput
+                  
                   keyboardType="numeric"
                   value={hostPort}
                   onChangeText={setHostPort}
@@ -293,56 +285,11 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
         initialName={playerName}
       />
 
-      </View>
-    </SafeAreaView>
+      </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    alignItems: 'center',
-  },
-  headerWrapper: {
-    width: '100%',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 70,
-  },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 4,
-    right: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 10,
-    elevation: 10,
-  },
-  backButtonIcon: {
-    padding: 8,
-    backgroundColor: 'rgba(45, 42, 67, 0.6)',
-    borderRadius: 20,
-  },
-  settingsButtonIcon: {
-    padding: 8,
-    backgroundColor: 'rgba(45, 42, 67, 0.6)',
-    borderRadius: 20,
-  },
-  screenTitle: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    letterSpacing: 1,
-  },
   title: {
     ...theme.typography.h1,
     color: theme.colors.textPrimary,
@@ -394,16 +341,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     marginBottom: theme.spacing.xs,
     fontWeight: 'bold',
-  },
-  input: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    color: theme.colors.textPrimary,
-    ...theme.typography.h2,
-    textAlign: 'center',
   },
   ipInput: {
     ...theme.typography.body1,

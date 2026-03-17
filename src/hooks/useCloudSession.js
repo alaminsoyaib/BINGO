@@ -13,6 +13,7 @@ import {
 import { database } from '../firebase/client';
 
 const ROOMS_ROOT = 'bingoRooms';
+const ROOM_CODE_LENGTH = 4;
 
 const initialState = {
   status: 'idle',
@@ -36,7 +37,7 @@ const createPlayerId = () => `p_${Math.random().toString(36).slice(2, 10)}`;
 const createRoomCode = () => {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < ROOM_CODE_LENGTH; i += 1) {
     code += alphabet[Math.floor(Math.random() * alphabet.length)];
   }
   return code;
@@ -169,6 +170,15 @@ export const useCloudSession = () => {
     const normalizedCode = (roomCode || '').trim().toUpperCase();
     if (!normalizedCode) {
       setState((prev) => ({ ...prev, status: 'error', error: 'Room code is required.' }));
+      return;
+    }
+
+    if (normalizedCode.length !== ROOM_CODE_LENGTH) {
+      setState((prev) => ({
+        ...prev,
+        status: 'error',
+        error: `Room code must be ${ROOM_CODE_LENGTH} characters.`
+      }));
       return;
     }
 

@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer } from 'expo-audio';
 import ConfettiCannon from 'react-native-confetti-cannon';
 
+import ScreenWrapper from '../components/ScreenWrapper';
 import { theme } from '../theme';
 import { useBingoGame } from '../hooks/useBingoGame';
 import Header from '../components/Header';
@@ -200,8 +200,7 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack }) => {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <ScreenWrapper>
         <View style={styles.headerWrapper}>
           <View style={styles.topBar}>
             <TouchableOpacity style={styles.backButton} onPress={onBack}>
@@ -258,22 +257,11 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack }) => {
           mode={mode}
           canRestart={!isOnline || session.isHost}
         />
-      </View>
-    </SafeAreaView>
+      </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    alignItems: 'center',
-  },
   headerWrapper: {
     width: '100%',
     position: 'relative',

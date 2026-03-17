@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Modal, Share, StatusBar, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, Modal, Share, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
 import PlayerSettingsModal from '../components/PlayerSettingsModal';
+import ScreenHeader from '../components/ScreenHeader';
+import StyledInput from '../components/StyledInput';
 
 const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlayerName, onPlayerNameChange }) => {
   const [playerName, setPlayerName] = useState(savedPlayerName || '');
@@ -51,23 +54,12 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.container}>
-        <View style={styles.headerWrapper}>
-          <View style={styles.topBar}>
-            <TouchableOpacity style={styles.backButtonIcon} onPress={onBack}>
-              <Ionicons name="arrow-back" size={28} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.settingsButtonIcon}
-              onPress={() => setSettingsVisible(true)}
-            >
-              <Ionicons name="settings-sharp" size={24} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.screenTitle}>GLOBAL PLAY</Text>
-        </View>
+    <ScreenWrapper>
+          <ScreenHeader
+            title={'GLOBAL PLAY'}
+            onBack={onBack}
+            onSettings={() => setSettingsVisible(true)}
+          />
 
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
@@ -80,14 +72,14 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
             <View style={styles.divider} />
 
             <Text style={styles.sectionTitle}>JOIN A ROOM</Text>
-            <TextInput
-              style={styles.input}
+            <StyledInput
+              
               placeholder="ENTER ROOM CODE"
               value={roomCodeInput}
-              onChangeText={(text) => setRoomCodeInput(text.toUpperCase())}
+              onChangeText={(text) => setRoomCodeInput(text.toUpperCase().slice(0, 4))}
               autoCapitalize="characters"
               placeholderTextColor={theme.colors.textSecondary}
-              maxLength={6}
+              maxLength={4}
             />
             <GameButton title="JOIN ROOM" variant="secondary" onPress={handleJoinRoom} style={styles.actionButton} />
           </View>
@@ -147,56 +139,11 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
         initialName={playerName}
       />
 
-      </View>
-    </SafeAreaView>
+      </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    alignItems: 'center',
-  },
-  headerWrapper: {
-    width: '100%',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 70,
-  },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 4,
-    right: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    zIndex: 10,
-    elevation: 10,
-  },
-  backButtonIcon: {
-    padding: 8,
-    backgroundColor: 'rgba(45, 42, 67, 0.6)',
-    borderRadius: 20,
-  },
-  settingsButtonIcon: {
-    padding: 8,
-    backgroundColor: 'rgba(45, 42, 67, 0.6)',
-    borderRadius: 20,
-  },
-  screenTitle: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    letterSpacing: 1,
-  },
   title: {
     ...theme.typography.h1,
     color: theme.colors.textPrimary,
@@ -227,17 +174,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.md,
     textAlign: 'center',
-  },
-  input: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    color: theme.colors.textPrimary,
-    ...theme.typography.h2,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
   },
   actionButton: {
     marginTop: theme.spacing.sm,

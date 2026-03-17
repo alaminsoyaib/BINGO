@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
 import PlayerSettingsModal from '../components/PlayerSettingsModal';
@@ -17,19 +17,15 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.container}>
+    <>
+      <ScreenWrapper style={styles.container}>
         <View style={styles.topBar}>
           <View style={styles.playerBadge}>
             <Text style={styles.nameLabel}>PLAYER</Text>
             <Text style={styles.nameBadge}>{currentName || 'Player'}</Text>
           </View>
           <TouchableOpacity activeOpacity={0.8} style={styles.settingsButton} onPress={() => setSettingsVisible(true)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <FontAwesome5 name="pencil-alt" size={14} color={theme.colors.accentYellow} />
-              <Text style={styles.settingsButtonText}>EDIT</Text>
-            </View>
+            <Ionicons name="settings-sharp" size={20} color={theme.colors.accentYellow} />
           </TouchableOpacity>
         </View>
 
@@ -64,7 +60,7 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
             style={styles.button}
           />
         </View>
-      </View>
+      </ScreenWrapper>
 
       <PlayerSettingsModal 
         visible={settingsVisible} 
@@ -72,15 +68,11 @@ const ModeSelectScreen = ({ onSelectMode, currentName, onSaveName }) => {
         onSave={handleSave} 
         initialName={currentName} 
       />
-    </SafeAreaView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   container: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
@@ -118,14 +110,11 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     backgroundColor: theme.colors.surfaceLight,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: theme.radius.md,
-  },
-  settingsButtonText: {
-    color: theme.colors.accentYellow,
-    fontWeight: '900',
-    fontSize: 14,
   },
   titleContainer: {
     alignItems: 'center',
