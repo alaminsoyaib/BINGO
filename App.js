@@ -7,12 +7,12 @@ import { StatusBar } from 'expo-status-bar';
 if (Text.defaultProps == null) {
   Text.defaultProps = {};
   Text.defaultProps.allowFontScaling = false;
-  Text.defaultProps.style = { fontFamily: 'sans-serif' };
+  // Text.defaultProps.style = { fontFamily: 'sans-serif' }; // REMOVED: Breaks vector icons on Android release builds
 }
 if (TextInput.defaultProps == null) {
   TextInput.defaultProps = {};
   TextInput.defaultProps.allowFontScaling = false;
-  TextInput.defaultProps.style = { fontFamily: 'sans-serif' };
+  // TextInput.defaultProps.style = { fontFamily: 'sans-serif' }; // REMOVED: Breaks vector icons on Android release builds
 }
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BingoScreen from './src/screens/BingoScreen';
