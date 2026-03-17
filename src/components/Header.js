@@ -1,9 +1,39 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { theme } from '../theme';
 
 const Header = ({ isSetupPhase, nextNumberToPlace, isWin, mode, onlineStatus, turnLabel, lastCalledNumber, winnerLabel }) => {
   const isOnline = mode === 'online' || mode === 'cloud';
+  const scaleValue = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    let anim;
+    if (isWin) {
+      anim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(scaleValue, {
+            toValue: 1.15,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleValue, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        ])
+      );
+      anim.start();
+    } else {
+      scaleValue.setValue(1);
+    }
+
+    return () => {
+      if (anim) {
+        anim.stop();
+      }
+    };
+  }, [isWin, scaleValue]);
 
   return (
     <View style={styles.container}>
@@ -20,7 +50,9 @@ const Header = ({ isSetupPhase, nextNumberToPlace, isWin, mode, onlineStatus, tu
       
       <View style={styles.phaseContainer}>
         {isWin ? (
-          <Text style={styles.winTitle}>MISSION ACCOMPLISHED</Text>
+          <Animated.Text style={[styles.winTitle, { transform: [{ scale: scaleValue }] }]}>
+            YOU WON!
+          </Animated.Text>
         ) : isSetupPhase ? (
           <>
             <Text style={styles.titleLabel}>PREPARE YOUR BOARD</Text>
@@ -71,11 +103,10 @@ const styles = StyleSheet.create({
   },
   winTitle: {
     ...theme.typography.h1,
-    color: theme.colors.success,
-    textShadowColor: theme.colors.success,
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
-    marginVertical: theme.spacing.md,
+    color: '#00FF41',
+    textShadowColor: '#00FF41',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 15,
   },
   winnerText: {
     ...theme.typography.h2,
@@ -84,7 +115,9 @@ const styles = StyleSheet.create({
   },
   phaseContainer: {
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: theme.spacing.xs,
+    minHeight: 70,
   },
   titleLabel: {
     ...theme.typography.h2,

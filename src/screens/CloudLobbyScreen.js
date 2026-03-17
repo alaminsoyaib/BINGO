@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Share, StatusBar, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Modal, Share, StatusBar, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
@@ -8,6 +9,7 @@ import GameButton from '../components/GameButton';
 const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlayerName, onPlayerNameChange }) => {
   const [playerName, setPlayerName] = useState(savedPlayerName || '');
   const [roomCodeInput, setRoomCodeInput] = useState('');
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const isConnected = session.status === 'connected';
   const isHost = session.role === 'host';
@@ -17,11 +19,19 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
     setPlayerName(savedPlayerName || '');
   }, [savedPlayerName]);
 
-  const handleNameBlur = async () => {
+  useEffect(() => {
+    if (session.inGame) {
+      onEnterGame();
+    }
+  }, [session.inGame, onEnterGame]);
+
+  const handleNameSave = async () => {
     if (!onPlayerNameChange) return;
     const nextName = playerName.trim();
-    if (!nextName) return;
-    await onPlayerNameChange(nextName);
+    if (nextName) {
+      await onPlayerNameChange(nextName);
+    }
+    setSettingsVisible(false);
   };
 
   const handleCreateRoom = () => {
@@ -41,26 +51,24 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.topRow}>
-        <GameButton title="BACK" variant="danger" onPress={onBack} style={styles.backButton} />
-        <Text style={styles.title}>GLOBAL PLAY</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>YOUR AGENT NAME</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Player name"
-            value={playerName}
-            onChangeText={setPlayerName}
-            onBlur={handleNameBlur}
-            placeholderTextColor={theme.colors.textSecondary}
-            maxLength={16}
-            autoCapitalize="characters"
-          />
+      <View style={styles.container}>
+        <View style={styles.headerWrapper}>
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.backButtonIcon} onPress={onBack}>
+              <Ionicons name="arrow-back" size={28} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.settingsButtonIcon}
+              onPress={() => setSettingsVisible(true)}
+            >
+              <Ionicons name="settings-sharp" size={24} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.screenTitle}>GLOBAL PLAY</Text>
         </View>
 
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         {!isConnected && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>CREATE A ROOM</Text>
@@ -110,8 +118,15 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
 
             <View style={styles.actionRow}>
               <GameButton title="SHARE" variant="secondary" onPress={shareInvite} style={styles.halfBtn} />
-              <GameButton title="ENTER GAME" variant="accent" onPress={onEnterGame} style={styles.halfBtn} />
+              <GameButton title={isHost ? "START" : "READY"} variant="success" onPress={() => {
+                if (isHost) {
+                  if (session.startGame) session.startGame();
+                } else {
+                  if (session.sendReady) session.sendReady();
+                }
+              }} style={styles.halfBtn} />
             </View>
+            <GameButton title="EXIT ROOM" variant="danger" onPress={onBack} style={{ marginTop: theme.spacing.md }} />
           </View>
         )}
 
@@ -120,7 +135,37 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
             <Text style={styles.errorText}>{session.error}</Text>
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      <Modal visible={settingsVisible} animationType="fade" transparent={true} onRequestClose={() => setSettingsVisible(false)}>
+        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>SETTINGS</Text>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>YOUR NAME</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Player name"
+                  value={playerName}
+                  onChangeText={setPlayerName}
+                  placeholderTextColor={theme.colors.textSecondary}
+                  maxLength={16}
+                  autoCapitalize="characters"
+                />
+              </View>
+              <GameButton title="SAVE" variant="primary" onPress={handleNameSave} style={{ marginTop: 10 }} />
+              <GameButton title="CANCEL" variant="secondary" onPress={() => {
+                setPlayerName(savedPlayerName || '');
+                setSettingsVisible(false);
+              }} style={{ marginTop: 10 }} />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      </View>
     </SafeAreaView>
   );
 };
@@ -130,28 +175,56 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  topRow: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingTop: 10,
     alignItems: 'center',
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderBottomWidth: 2,
-    borderColor: theme.colors.surfaceLight,
   },
-  backButton: {
-    width: 100,
-    marginRight: theme.spacing.md,
+  headerWrapper: {
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 70,
+  },
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 4,
+    right: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 10,
+    elevation: 10,
+  },
+  backButtonIcon: {
+    padding: 8,
+    backgroundColor: 'rgba(45, 42, 67, 0.6)',
+    borderRadius: 20,
+  },
+  settingsButtonIcon: {
+    padding: 8,
+    backgroundColor: 'rgba(45, 42, 67, 0.6)',
+    borderRadius: 20,
+  },
+  screenTitle: {
+    ...theme.typography.h1,
+    color: theme.colors.textPrimary,
+    letterSpacing: 1,
   },
   title: {
     ...theme.typography.h1,
     color: theme.colors.textPrimary,
-    flex: 1,
     textAlign: 'center',
-    paddingRight: 100 + theme.spacing.md, // offset back button width
+    marginBottom: theme.spacing.lg,
   },
   scrollContainer: {
     padding: theme.spacing.md,
     gap: theme.spacing.lg,
+    width: '100%',
   },
   section: {
     backgroundColor: theme.colors.surface,
@@ -268,6 +341,28 @@ const styles = StyleSheet.create({
     color: theme.colors.danger,
     textAlign: 'center',
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xl,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 2,
+    borderColor: theme.colors.surfaceLight,
+    ...theme.shadows.card,
+  },
+  modalTitle: {
+    ...theme.typography.h2,
+    color: theme.colors.accentYellow,
+    textAlign: 'center',
+    marginBottom: theme.spacing.md,
   }
 });
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Modal, BackHandler, ScrollView, StatusBar, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { theme } from '../theme';
 import GameButton from '../components/GameButton';
@@ -16,8 +16,6 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
   const [joinHost, setJoinHost] = useState('');
   const [joinPort, setJoinPort] = useState(String(DEFAULT_PORT));
   const [scannerVisible, setScannerVisible] = useState(false);
-  const [instructionsType, setInstructionsType] = useState(null); // 'host' or 'join'
-  const [settingsVisible, setSettingsVisible] = useState(false);
   const [advancedVisible, setAdvancedVisible] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -35,13 +33,11 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
     }
   }, [session.inGame, onEnterGame]);
 
-  const handleNameSave = async () => {
+  const handleNameBlur = async () => {
     if (!onPlayerNameChange) return;
     const nextName = playerName.trim();
-    if (nextName) {
-      await onPlayerNameChange(nextName);
-    }
-    setSettingsVisible(false);
+    if (!nextName) return;
+    await onPlayerNameChange(nextName);
   };
 
   const parsePort = (value) => {
@@ -91,89 +87,39 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.container}>
-        <View style={styles.headerWrapper}>
-          <View style={styles.topBar}>
-            <TouchableOpacity style={styles.backButtonIcon} onPress={onBack}>
-              <Ionicons name="arrow-back" size={28} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.settingsButtonIcon}
-              onPress={() => setSettingsVisible(true)}
-            >
-              <Ionicons name="settings-sharp" size={24} color={theme.colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.screenTitle}>{isHost ? 'LOCAL HOST' : 'LOCAL NETWORK'}</Text>
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.backButtonIcon} onPress={onBack}>
+          <Ionicons name="arrow-back" size={28} color={theme.colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+          <View style={styles.section}>
+          <Text style={styles.sectionTitle}>YOUR AGENT NAME</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Player name"
+            value={playerName}
+            onChangeText={setPlayerName}
+            onBlur={handleNameBlur}
+            placeholderTextColor={theme.colors.textSecondary}
+            maxLength={16}
+            autoCapitalize="characters"
+          />
         </View>
 
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         {!isConnected && (
           <View style={styles.section}>
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleBase}>JOIN A ROOM</Text>
-              <TouchableOpacity onPress={() => setInstructionsType('join')} style={styles.helpIconBox}>
-                <Ionicons name="help-circle" size={24} color={theme.colors.accentYellow} />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.helpText}>Enter host IP or scan their QR code to join.</Text>
-
-            <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12 }}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0, ...theme.typography.body1 }]}
-                placeholder="HOST IP (e.g. 192.168.0.10)"
-                value={joinHost}
-                onChangeText={setJoinHost}
-                placeholderTextColor={theme.colors.textSecondary}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                onPress={showScanner}
-                activeOpacity={0.8}
-                style={{
-                  width: 60,
-                  backgroundColor: theme.colors.accent,
-                  borderRadius: theme.radius.lg,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderBottomWidth: 4,
-                  borderColor: '#00A3A0'
-                }}
-              >
-                <MaterialCommunityIcons name="qrcode-scan" size={28} color="#1A1829" />
-              </TouchableOpacity>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'stretch', gap: 12, marginTop: theme.spacing.md }}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0, ...theme.typography.body1  }]}
-                keyboardType="numeric"
-                value={joinPort}
-                onChangeText={setJoinPort}
-                placeholder="Port"
-                placeholderTextColor={theme.colors.textSecondary}
-              />
-              <View style={{ flex: 1 }}>
-                <GameButton title="JOIN" variant="secondary" onPress={handleJoinRoom} loading={session.status === 'connecting' && session.role === 'client'} />
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitleBase}>HOST A ROOM</Text>
-              <TouchableOpacity onPress={() => setInstructionsType('host')} style={styles.helpIconBox}>
-                <Ionicons name="help-circle" size={24} color={theme.colors.accentYellow} />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.sectionTitle}>DEPLOY OUTPOST</Text>
             <Text style={styles.helpText}>Host a Local game on your current Wi-Fi network.</Text>
-            <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} loading={session.status === 'connecting' && session.role === 'host'} />
+            <GameButton title="CREATE ROOM" variant="primary" onPress={handleCreateRoom} style={styles.actionButton} />
 
             <View style={styles.advancedToggle}>
-              <GameButton
-                title={advancedVisible ? "HIDE ADVANCED" : "SHOW ADVANCED"}
-                variant="accent"
-                onPress={() => setAdvancedVisible((prev) => !prev)}
+              <GameButton 
+                title={advancedVisible ? "HIDE ADVANCED" : "SHOW ADVANCED"} 
+                variant="accent" 
+                onPress={() => setAdvancedVisible((prev) => !prev)} 
                 style={styles.advancedBtn}
               />
             </View>
@@ -191,13 +137,46 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
                 />
               </View>
             )}
+
+            <View style={styles.divider} />
+
+            <Text style={styles.sectionTitle}>INFILTRATE OUTPOST</Text>
+            <Text style={styles.helpText}>Enter host IP or scan their QR code to join.</Text>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                placeholder="HOST IP (e.g. 192.168.0.10)"
+                value={joinHost}
+                onChangeText={setJoinHost}
+                placeholderTextColor={theme.colors.textSecondary}
+                autoCapitalize="none"
+              />
+              <GameButton 
+                variant="accent"
+                icon={(color) => <MaterialCommunityIcons name="qrcode-scan" size={24} color={color} />}
+                onPress={showScanner}
+                style={{ width: 60 }}
+              />
+            </View>
+            <View style={[styles.row, { marginTop: theme.spacing.md }]}>
+              <TextInput
+                style={[styles.input, styles.flexInput]}
+                keyboardType="numeric"
+                value={joinPort}
+                onChangeText={setJoinPort}
+                placeholder="Port"
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+              <GameButton title="JOIN" variant="secondary" onPress={handleJoinRoom} style={styles.flexBtn} />
+            </View>
           </View>
         )}
 
         {isConnected && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{isHost ? 'HOSTING ROOM' : 'CONNECTED TO ROOM'}</Text>
-
+            <Text style={styles.sectionTitle}>{isHost ? 'HOSTING OUTPOST' : 'CONNECTED TO OUTPOST'}</Text>
+            
             {session.hostInfo && (
               <View style={styles.hostInfo}>
                 <View style={styles.advancedToggle}>
@@ -230,11 +209,19 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               {session.players.map((player) => (
                 <View key={player.id} style={styles.playerItem}>
                   <Text style={styles.playerItemText}>• {player.name}</Text>
-
+                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
+                    {player.ready ? 'READY' : 'WAITING'}
+                  </Text>
                 </View>
               ))}
             </View>
-              {isHost && <GameButton title="START" variant="success" onPress={() => { if (session.startGame) session.startGame(); }} style={styles.actionButton} />}
+              <GameButton title={isHost ? "START" : "READY"} variant="success" onPress={() => {
+                if (isHost) {
+                  if (session.startGame) session.startGame();
+                } else {
+                  if (session.sendReady) session.sendReady();
+                }
+              }} style={styles.actionButton} />
               <GameButton title="EXIT ROOM" variant="danger" onPress={onBack} style={{ marginTop: theme.spacing.md }} />
           </View>
         )}
@@ -253,65 +240,11 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
           <View style={[styles.scannerHeader, { paddingTop: insets.top + 8 }]}> 
             <GameButton title="ABORT SCAN" variant="danger" onPress={() => setScannerVisible(false)} style={styles.scannerCloseTop} />
           </View>
-          <View style={[styles.scannerHintBox, { bottom: insets.bottom + 18 }]}>
-            <Text style={styles.scannerHint}>Point your camera at a host's QR code.</Text>
+          <View style={[styles.scannerHintBox, { bottom: insets.bottom + 18 }]}> 
+            <Text style={styles.scannerHint}>Aim your crosshairs at a host's QR code.</Text>
           </View>
         </View>
       </Modal>
-      <Modal visible={!!instructionsType} animationType="fade" transparent={true} onRequestClose={() => setInstructionsType(null)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{instructionsType === 'host' ? 'HOW TO HOST' : 'HOW TO JOIN'}</Text>
-            {instructionsType === 'host' ? (
-              <ScrollView style={styles.modalScroll}>
-                <Text style={styles.instructionText}>1. Ensure you are connected to a Wi-Fi network or mobile hotspot.</Text>
-                <Text style={styles.instructionText}>2. Tap 'CREATE ROOM' to host the game on your device.</Text>
-                <Text style={styles.instructionText}>3. Once created, a QR Code and your IP Address will be displayed.</Text>
-                <Text style={styles.instructionText}>4. Other players can scan the QR code or manually enter the IP to join.</Text>
-                <Text style={styles.instructionText}>5. Wait for players to join and then start the game!</Text>
-              </ScrollView>
-            ) : (
-              <ScrollView style={styles.modalScroll}>
-                <Text style={styles.instructionText}>1. Ensure you are connected to a Wi-Fi network or mobile hotspot.</Text>
-                <Text style={styles.instructionText}>2. Tap the QR Code icon to scan the host's screen.</Text>
-                <Text style={styles.instructionText}>3. Alternatively, enter the host's IP Address manually.</Text>
-                <Text style={styles.instructionText}>4. Tap 'JOIN' to enter the room.</Text>
-                <Text style={styles.instructionText}>5. Wait for the host to start the game!</Text>
-              </ScrollView>
-            )}
-            <GameButton title="GOT IT" variant="secondary" onPress={() => setInstructionsType(null)} style={{ marginTop: 20 }} />
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={settingsVisible} animationType="fade" transparent={true} onRequestClose={() => setSettingsVisible(false)}>
-        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>SETTINGS</Text>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>YOUR NAME</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Player name"
-                  value={playerName}
-                  onChangeText={setPlayerName}
-                  placeholderTextColor={theme.colors.textSecondary}
-                  maxLength={16}
-                  autoCapitalize="characters"
-                />
-              </View>
-              <GameButton title="SAVE" variant="primary" onPress={handleNameSave} style={{ marginTop: 10 }} />
-              <GameButton title="CANCEL" variant="secondary" onPress={() => {
-                setPlayerName(savedPlayerName || '');
-                setSettingsVisible(false);
-              }} style={{ marginTop: 10 }} />
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      </View>
     </SafeAreaView>
   );
 };
@@ -321,45 +254,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  container: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingTop: 10,
-    alignItems: 'center',
-  },
-  headerWrapper: {
-    width: '100%',
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: 70,
-  },
   topBar: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 4,
-    right: 4,
+    top: 10,
+    left: 8,
+    right: 8,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     zIndex: 10,
     elevation: 10,
+    paddingHorizontal: 4,
   },
   backButtonIcon: {
     padding: 8,
     backgroundColor: 'rgba(45, 42, 67, 0.6)',
     borderRadius: 20,
-  },
-  settingsButtonIcon: {
-    padding: 8,
-    backgroundColor: 'rgba(45, 42, 67, 0.6)',
-    borderRadius: 20,
-  },
-  screenTitle: {
-    ...theme.typography.h1,
-    color: theme.colors.textPrimary,
-    letterSpacing: 1,
   },
   title: {
     ...theme.typography.h1,
@@ -369,8 +279,8 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     padding: theme.spacing.md,
+    paddingTop: 60,
     gap: theme.spacing.lg,
-    width: '100%',
   },
   section: {
     backgroundColor: theme.colors.surface,
@@ -385,21 +295,6 @@ const styles = StyleSheet.create({
     color: theme.colors.accentYellow,
     marginBottom: theme.spacing.sm,
     textAlign: 'center',
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
-    gap: 8,
-  },
-  sectionTitleBase: {
-    ...theme.typography.h2,
-    color: theme.colors.accentYellow,
-    textAlign: 'center',
-  },
-  helpIconBox: {
-    padding: 2,
   },
   helpText: {
     ...theme.typography.body2,
@@ -422,13 +317,10 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     ...theme.typography.h2,
     textAlign: 'center',
-  },
-  ipInput: {
-    ...theme.typography.body1,
-    textAlign: 'center',
+    marginBottom: theme.spacing.md,
   },
   actionButton: {
-    marginTop: theme.spacing.md,
+    marginTop: theme.spacing.sm,
   },
   advancedToggle: {
     alignItems: 'center',
@@ -573,39 +465,7 @@ const styles = StyleSheet.create({
     ...theme.typography.body2,
     textAlign: 'center',
     overflow: 'hidden',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: theme.spacing.xl,
-  },
-  modalContent: {
-    width: '100%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    borderWidth: 2,
-    borderColor: theme.colors.surfaceLight,
-    ...theme.shadows.card,
-  },
-  modalTitle: {
-    ...theme.typography.h2,
-    color: theme.colors.accentYellow,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  modalScroll: {
-    maxHeight: 300,
-  },
-  instructionText: {
-    ...theme.typography.body1,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
-    lineHeight: 24,
   }
 });
 
 export default OnlineLobbyScreen;
-
