@@ -101,8 +101,8 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
             onSettings={() => setSettingsVisible(true)}
           />
 
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        <KeyboardAvoidingView style={{ flex: 1, width: '100%' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView style={{ width: '100%' }} contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         {!isConnected && (
           <>
             <View style={styles.section}>
