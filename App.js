@@ -1,22 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { BackHandler, Text, TextInput, LayoutAnimation, UIManager, Platform } from 'react-native';
+import React, { useCallback, useEffect, useLayoutEffect, useState, useRef } from 'react';
+import { BackHandler, Text, TextInput, Animated, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 // Set global custom font styles to bypass system fonts on Android devices like Samsung
 if (Text.defaultProps == null) {
   Text.defaultProps = {};
   Text.defaultProps.allowFontScaling = false;
-  // Text.defaultProps.style = { fontFamily: 'sans-serif' }; // REMOVED: Breaks vector icons on Android release builds
 }
 if (TextInput.defaultProps == null) {
   TextInput.defaultProps = {};
   TextInput.defaultProps.allowFontScaling = false;
-  // TextInput.defaultProps.style = { fontFamily: 'sans-serif' }; // REMOVED: Breaks vector icons on Android release builds
 }
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import BingoScreen from './src/screens/BingoScreen';
@@ -38,6 +32,44 @@ const generateDefaultName = () => {
   return `${adjective}${noun}${number}`;
 };
 
+/**
+ * Simple, robust screen transition.
+ * - Always renders live children (no snapshots — lobby updates work).
+ * - On screen change: snap invisible before paint, then fade+scale in.
+ */
+const ScreenTransition = ({ screenKey, children }) => {
+  const anim = useRef(new Animated.Value(1)).current;
+  const prevKey = useRef(screenKey);
+
+  useLayoutEffect(() => {
+    if (screenKey === prevKey.current) return;
+    prevKey.current = screenKey;
+
+    // Snap invisible before the frame paints — hides the content swap
+    anim.setValue(0);
+
+    // Smoothly reveal the new screen
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 280,
+      useNativeDriver: true,
+    }).start();
+  }, [screenKey]);
+
+  const scale = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.96, 1],
+  });
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
+      <Animated.View style={{ flex: 1, opacity: anim, transform: [{ scale }] }}>
+        {children}
+      </Animated.View>
+    </View>
+  );
+};
+
 export default function App() {
   const [mode, setMode] = useState(null);
   const [screen, setScreen] = useState('mode');
@@ -48,10 +80,6 @@ export default function App() {
   const cloudSession = useCloudSession();
 
   const activeSession = mode === 'online' ? localSession : mode === 'cloud' ? cloudSession : null;
-
-  const smoothTransition = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  };
 
   useEffect(() => {
     const bootstrapName = async () => {
@@ -87,7 +115,6 @@ export default function App() {
   }, [persistPlayerName]);
 
   const handleSelectMode = useCallback((nextMode) => {
-    smoothTransition();
     setMode(nextMode);
     setScreen(nextMode === 'online' || nextMode === 'cloud' ? 'lobby' : 'game');
   }, []);
@@ -96,36 +123,30 @@ export default function App() {
     if (mode === 'online' || mode === 'cloud') {
       activeSession?.leaveRoom();
     }
-    smoothTransition();
     setMode(null);
     setScreen('mode');
   }, [activeSession, mode]);
 
   const handleEnterGame = useCallback(() => {
-    smoothTransition();
     setScreen('game');
   }, []);
 
   const handleBackFromGame = useCallback(() => {
     if (mode === 'online' || mode === 'cloud') {
-      smoothTransition();
       setScreen('lobby');
       return;
     }
-    smoothTransition();
     setMode(null);
     setScreen('mode');
   }, [mode]);
 
   const handleExitOnline = useCallback(() => {
     activeSession?.leaveRoom();
-    smoothTransition();
     setMode(null);
     setScreen('mode');
   }, [activeSession]);
 
   const handleReturnToLobby = useCallback(() => {
-    smoothTransition();
     setScreen('lobby');
   }, []);
 
@@ -146,43 +167,45 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      {!isBootstrapping && needsNameSetup && (
-        <FirstLaunchNameScreen onContinue={handleNameSetupDone} suggestedName={generateDefaultName()} />
-      )}
-      {!isBootstrapping && !needsNameSetup && screen === 'mode' && (
-        <ModeSelectScreen
-          onSelectMode={handleSelectMode}
-          currentName={playerName}
-          onSaveName={handlePlayerNameChange}
-        />
-      )}
-      {!isBootstrapping && !needsNameSetup && screen === 'lobby' && mode === 'online' && (
-        <OnlineLobbyScreen
-          session={localSession}
-          onBack={handleBackToMode}
-          onEnterGame={handleEnterGame}
-          playerName={playerName}
-          onPlayerNameChange={handlePlayerNameChange}
-        />
-      )}
-      {!isBootstrapping && !needsNameSetup && mode === 'cloud' && screen === 'lobby' && (
-        <CloudLobbyScreen
-          session={cloudSession}
-          onBack={handleBackToMode}
-          onEnterGame={handleEnterGame}
-          playerName={playerName}
-          onPlayerNameChange={handlePlayerNameChange}
-        />
-      )}
-      {!isBootstrapping && !needsNameSetup && screen === 'game' && (
-        <BingoScreen
-          mode={mode || 'offline'}
-          session={activeSession}
-          onExitOnline={(mode === 'online' || mode === 'cloud') ? handleExitOnline : null}
-          onReturnToLobby={handleReturnToLobby}
-          onBack={handleBackFromGame}
-        />
-      )}
+      <ScreenTransition screenKey={screen}>
+        {!isBootstrapping && needsNameSetup && (
+          <FirstLaunchNameScreen onContinue={handleNameSetupDone} suggestedName={generateDefaultName()} />
+        )}
+        {!isBootstrapping && !needsNameSetup && screen === 'mode' && (
+          <ModeSelectScreen
+            onSelectMode={handleSelectMode}
+            currentName={playerName}
+            onSaveName={handlePlayerNameChange}
+          />
+        )}
+        {!isBootstrapping && !needsNameSetup && screen === 'lobby' && mode === 'online' && (
+          <OnlineLobbyScreen
+            session={localSession}
+            onBack={handleBackToMode}
+            onEnterGame={handleEnterGame}
+            playerName={playerName}
+            onPlayerNameChange={handlePlayerNameChange}
+          />
+        )}
+        {!isBootstrapping && !needsNameSetup && mode === 'cloud' && screen === 'lobby' && (
+          <CloudLobbyScreen
+            session={cloudSession}
+            onBack={handleBackToMode}
+            onEnterGame={handleEnterGame}
+            playerName={playerName}
+            onPlayerNameChange={handlePlayerNameChange}
+          />
+        )}
+        {!isBootstrapping && !needsNameSetup && screen === 'game' && (
+          <BingoScreen
+            mode={mode || 'offline'}
+            session={activeSession}
+            onExitOnline={(mode === 'online' || mode === 'cloud') ? handleExitOnline : null}
+            onReturnToLobby={handleReturnToLobby}
+            onBack={handleBackFromGame}
+          />
+        )}
+      </ScreenTransition>
     </SafeAreaProvider>
   );
 }
