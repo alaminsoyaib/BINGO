@@ -158,12 +158,6 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
   const isLocalWinner = isWin || (isOnline && isGameOver && session.winners.includes(session.playerId));
 
   useEffect(() => {
-    if (isOnline && session?.inGame && isSetupPhase) {
-      autoFillRemaining();
-    }
-  }, [isOnline, session?.inGame, isSetupPhase, autoFillRemaining]);
-
-  useEffect(() => {
     if (!isOnline) return;
     if (!isSetupPhase && !session.localReady) {
       session.sendReady();

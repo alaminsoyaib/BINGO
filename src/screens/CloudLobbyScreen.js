@@ -167,8 +167,8 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
               {session.players.map((player) => (
                 <View key={player.id} style={styles.playerItem}>
                   <Text style={styles.playerItemText}>• {player.name}</Text>
-                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
-                    {player.ready ? 'READY' : 'WAITING'}
+                  <Text style={[styles.playerStatus, player.id === session.hostId ? styles.statusReady : styles.statusWaiting]}>
+                    {player.id === session.hostId ? 'HOST' : 'WAITING'}
                   </Text>
                 </View>
               ))}
@@ -180,20 +180,13 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
               </View>
             </View>
 
-            <View style={styles.actionRow}>
-              <GameButton title="SHARE" variant="secondary" onPress={shareInvite} style={styles.halfBtn} />
+            <View style={{ marginBottom: theme.spacing.md }}>
               {isHost ? (
                 <GameButton title="START" variant="success" onPress={() => {
                   if (session.startGame) session.startGame();
-                }} style={styles.halfBtn} />
+                }} />
               ) : (
-                <GameButton 
-                 title={localPlayer?.ready ? "READY!" : "MARK READY"} 
-                 variant={localPlayer?.ready ? "secondary" : "success"}
-                 disabled={localPlayer?.ready}
-                 onPress={() => { if (session.setPlayerReady) session.setPlayerReady(true); }}
-                 style={styles.halfBtn}
-               />
+                <Text style={[styles.helpText, { textAlign: 'center', marginBottom: 0 }]}>Waiting for host to start...</Text>
               )}
             </View>
             <GameButton title="EXIT ROOM" variant="danger" onPress={() => { if (session.leaveRoom) session.leaveRoom(); }} style={{ marginTop: theme.spacing.md }} />

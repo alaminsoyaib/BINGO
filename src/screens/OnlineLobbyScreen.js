@@ -227,8 +227,8 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               {session.players.map((player) => (
                 <View key={player.id} style={styles.playerItem}>
                   <Text style={styles.playerItemText}>• {player.name}</Text>
-                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
-                    {player.ready ? 'READY' : 'WAITING'}
+                  <Text style={[styles.playerStatus, player.id === session.hostId ? styles.statusReady : styles.statusWaiting]}>
+                    {player.id === session.hostId ? 'HOST' : 'WAITING'}
                   </Text>
                 </View>
               ))}
@@ -237,13 +237,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               {isHost ? (
                 <GameButton title="START" variant="success" onPress={() => { if (session.startGame) session.startGame(); }} style={styles.halfBtn} />
               ) : (
-                <GameButton 
-                 title={localPlayer?.ready ? "READY!" : "MARK READY"} 
-                 variant={localPlayer?.ready ? "secondary" : "success"}
-                 disabled={localPlayer?.ready}
-                 onPress={() => { if (session.setPlayerReady) session.setPlayerReady(true); }}
-                 style={styles.halfBtn}
-               />
+                <Text style={[styles.helpText, { flex: 1, textAlignVertical: 'center', marginBottom: 0 }]}>Waiting for host...</Text>
               )}
               <GameButton title="EXIT ROOM" variant="danger" onPress={() => { if (session.leaveRoom) session.leaveRoom(); }} style={styles.halfBtn} />
             </View>

@@ -28,7 +28,8 @@ const initialState = {
   lastCalledNumber: null,
   winners: [],
   resetCounter: 0,
-  error: null
+  error: null,
+  localReady: false
 };
 
 const createPlayerId = () => `p_${Math.random().toString(36).slice(2, 10)}`;
@@ -77,7 +78,9 @@ export const useCloudSession = () => {
       lastCalledNumber: game.lastCalledNumber ?? null,
       winners: game.winners || [],
       resetCounter: game.resetCounter ?? 0,
-      error: null
+      error: null,
+      localReady: localPlayer ? localPlayer.ready : false,
+      hostId: roomData.hostId
     }));
   };
 
@@ -103,11 +106,6 @@ export const useCloudSession = () => {
 
       const players = Object.values(roomData.players || {});
       const isHost = roomData.hostId === stateRef.current.playerId;
-      const allReady = players.length >= 2 && players.every(p => p.ready);
-
-      if (isHost && allReady && !roomData.game?.inGame) {
-        startGame();
-      }
     });
   };
 
@@ -115,6 +113,10 @@ export const useCloudSession = () => {
     if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
     const playerRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}/players/${stateRef.current.playerId}`);
     await update(playerRef, { ready: isReady });
+  };
+
+  const sendReady = async () => {
+    await setPlayerReady(true);
   };
 
   const startGame = async () => {
@@ -152,6 +154,7 @@ export const useCloudSession = () => {
   };
 
   const createRoom = async ({ name }) => {
+    if (stateRef.current.status === 'connecting' || stateRef.current.status === 'connected') return;
     const playerId = createPlayerId();
     const roomCode = createRoomCode();
     const roomRef = ref(database, `${ROOMS_ROOT}/${roomCode}`);
@@ -185,6 +188,7 @@ export const useCloudSession = () => {
   };
 
   const joinRoom = async ({ roomCode, name }) => {
+    if (stateRef.current.status === 'connecting' || stateRef.current.status === 'connected') return;
     const normalizedCode = (roomCode || '').trim().toUpperCase();
     if (!normalizedCode) {
       setState((prev) => ({ ...prev, status: 'error', error: 'Room code is required.' }));
@@ -344,6 +348,7 @@ export const useCloudSession = () => {
     sendCall,
     sendReset,
     sendWin,
-    setPlayerReady
+    setPlayerReady,
+    sendReady
   };
 };

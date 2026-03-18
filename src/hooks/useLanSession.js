@@ -17,7 +17,8 @@ const initialState = {
   localReady: false,
   winnerId: null,
   resetCounter: 0,
-  error: null
+  error: null,
+  hostId: 0
 };
 
 const createLineParser = (onMessage) => {
@@ -146,11 +147,10 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
     broadcastState();
   };
 
-  const maybeAutoStart = () => {
-    const { players, inGame } = stateRef.current;
-    if (inGame) return;
+  const startGame = () => {
+    const { players, inGame, role } = stateRef.current;
+    if (inGame || role !== 'host') return;
     if (players.length < 2) return;
-    if (!players.every((player) => player.ready)) return;
 
     const startingIndex = Math.floor(Math.random() * players.length);
     const startingPlayerId = players[startingIndex]?.id ?? null;
@@ -212,7 +212,6 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           )
         }));
         broadcastState();
-        maybeAutoStart();
         break;
       }
       case 'call': {
@@ -278,6 +277,7 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
   };
 
   const hostRoom = async ({ port = DEFAULT_PORT, name = 'Host' } = {}) => {
+    if (stateRef.current.status === 'connecting' || stateRef.current.status === 'connected') return;
     if (serverRef.current) return;
     updateState({ status: 'connecting', role: 'host', error: null });
 
@@ -326,6 +326,7 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
   };
 
   const joinRoom = ({ host, port = DEFAULT_PORT, name = 'Player' } = {}) => {
+    if (stateRef.current.status === 'connecting' || stateRef.current.status === 'connected') return;
     if (!host) {
       updateState({ error: 'Host address is required', status: 'error' });
       return;
@@ -377,12 +378,17 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
         )
       }));
       broadcastState();
-      maybeAutoStart();
       return;
     }
     if (clientSocketRef.current) {
       updateState((prev) => ({ ...prev, localReady: true }));
       sendToSocket(clientSocketRef.current, { type: 'ready' });
+    }
+  };
+
+  const setPlayerReady = (isReady) => {
+    if (isReady) {
+      sendReady();
     }
   };
 
@@ -431,10 +437,11 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
     hostRoom,
     joinRoom,
     leaveRoom,
-    startGame: maybeAutoStart,
+    startGame,
     sendReady,
     sendCall,
     sendReset,
-    sendWin
+    sendWin,
+    setPlayerReady
   };
 };
