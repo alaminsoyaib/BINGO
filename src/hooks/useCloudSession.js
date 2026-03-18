@@ -26,6 +26,7 @@ const initialState = {
   currentTurnPlayerId: null,
   calledNumbers: [],
   lastCalledNumber: null,
+  localReady: false,
   winners: [],
   resetCounter: 0,
   error: null
@@ -63,7 +64,6 @@ export const useCloudSession = () => {
   const syncFromRoom = (roomCode, roomData) => {
     const players = Object.values(roomData.players || {});
     const game = roomData.game || {};
-    const localPlayer = players.find((player) => player.id === stateRef.current.playerId);
 
     setState((prev) => ({
       ...prev,
@@ -77,6 +77,7 @@ export const useCloudSession = () => {
       lastCalledNumber: game.lastCalledNumber ?? null,
       winners: game.winners || [],
       resetCounter: game.resetCounter ?? 0,
+      localReady: game.inGame ? prev.localReady : false,
       error: null
     }));
   };
@@ -115,6 +116,12 @@ export const useCloudSession = () => {
     if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
     const playerRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}/players/${stateRef.current.playerId}`);
     await update(playerRef, { ready: isReady });
+  };
+
+  const sendReady = async () => {
+    if (stateRef.current.localReady) return;
+    setState((prev) => ({ ...prev, localReady: true }));
+    await setPlayerReady(true);
   };
 
   const startGame = async () => {
@@ -343,6 +350,7 @@ export const useCloudSession = () => {
     startGame,
     sendCall,
     sendReset,
+    sendReady,
     sendWin,
     setPlayerReady
   };
