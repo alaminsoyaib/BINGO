@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, BackHandler, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Modal, BackHandler, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import GameButton from '../components/GameButton';
 import PlayerSettingsModal from '../components/PlayerSettingsModal';
 import ScreenHeader from '../components/ScreenHeader';
 import StyledInput from '../components/StyledInput';
+import CustomAlert from '../components/CustomAlert';
 
 const DEFAULT_PORT = 5050;
 
@@ -23,6 +24,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
   const [instructionsType, setInstructionsType] = useState(null); // 'host' or 'join'
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [advancedVisible, setAdvancedVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: '', message: '', type: 'info', icon: 'information-circle' });
   const [permission, requestPermission] = useCameraPermissions();
 
   const isConnected = session.status === 'connected';
@@ -235,7 +237,19 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
             </View>
             <View style={styles.actionRow}>
               {isHost ? (
-                <GameButton title="START" variant="success" onPress={() => { if (session.startGame) session.startGame(); }} style={styles.halfBtn} />
+                <GameButton title="START" variant="success" onPress={() => { 
+                  if (session.players.length < 2) {
+                    setAlertConfig({
+                      visible: true,
+                      title: 'Cannot Start',
+                      message: 'No other player has joined yet.',
+                      type: 'warning',
+                      icon: 'alert-circle'
+                    });
+                    return;
+                  }
+                  if (session.startGame) session.startGame(); 
+                }} style={styles.halfBtn} />
               ) : (
                 <Text style={[styles.helpText, { flex: 1, textAlignVertical: 'center', marginBottom: 0 }]}>Waiting for host...</Text>
               )}
@@ -324,6 +338,15 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
         onClose={() => setSettingsVisible(false)}
         onSave={handleNameSave}
         initialName={playerName}
+      />
+
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        icon={alertConfig.icon}
+        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
       />
 
       </ScreenWrapper>

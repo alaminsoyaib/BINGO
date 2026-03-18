@@ -196,9 +196,11 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
         updateState((prev) => {
           const existing = prev.players.find((player) => player.id === clientId);
           if (existing) return prev;
+          
+          const filteredPlayers = prev.players.filter((player) => player.name !== message.name);
           return {
             ...prev,
-            players: [...prev.players, { id: clientId, name: message.name || `Player ${clientId}`, ready: false }]
+            players: [...filteredPlayers, { id: clientId, name: message.name || `Player ${clientId}`, ready: false }]
           };
         });
         broadcastState();

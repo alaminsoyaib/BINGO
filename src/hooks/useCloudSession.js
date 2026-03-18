@@ -214,18 +214,27 @@ export const useCloudSession = () => {
     }
 
     const roomData = roomSnapshot.val();
-    const playerRef = ref(database, `${ROOMS_ROOT}/${normalizedCode}/players/${playerId}`);
+
+    let finalPlayerId = createPlayerId();
+    if (roomData.players) {
+      const existingEntry = Object.entries(roomData.players).find(([_, p]) => p.name === name);
+      if (existingEntry) {
+        finalPlayerId = existingEntry[0];
+      }
+    }
+
+    const playerRef = ref(database, `${ROOMS_ROOT}/${normalizedCode}/players/${finalPlayerId}`);
 
     setState({
       ...initialState,
       status: 'connecting',
-      role: roomData.hostId === playerId ? 'host' : 'client',
-      playerId,
+      role: roomData.hostId === finalPlayerId ? 'host' : 'client',
+      playerId: finalPlayerId,
       roomCode: normalizedCode,
       hostInfo: { roomCode: normalizedCode }
     });
 
-    await set(playerRef, { id: playerId, name, ready: false });
+    await set(playerRef, { id: finalPlayerId, name, ready: false });
     playerRefRef.current = playerRef;
     onDisconnect(playerRef).remove();
 

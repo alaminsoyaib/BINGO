@@ -1,22 +1,21 @@
 import { Dimensions } from 'react-native';
 
-const BASE_WIDTH = 390;
-const BASE_HEIGHT = 844;
-
 const getWindow = () => Dimensions.get('window');
 
+// Clamp is still useful for other things
 export const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-export const scale = (size) => (getWindow().width / BASE_WIDTH) * size;
+// Disabled responsive scaling to ensure UI sizing is strictly consistent
+// across all devices, behaving exactly like native DP sizing.
+export const scale = (size) => size;
 
-export const verticalScale = (size) => (getWindow().height / BASE_HEIGHT) * size;
+export const verticalScale = (size) => size;
 
-export const moderateScale = (size, factor = 0.5) => size + (scale(size) - size) * factor;
+export const moderateScale = (size, factor = 0.5) => size;
 
-export const rs = (size, min = size * 0.85, max = size * 1.25) =>
-  clamp(moderateScale(size), min, max);
+// Just return the requested base size
+export const rs = (size, min, max) => size;
 
-export const rvs = (size, min = size * 0.85, max = size * 1.2) =>
-  clamp(verticalScale(size), min, max);
+export const rvs = (size, min, max) => size;
 
 export const windowSize = () => getWindow();

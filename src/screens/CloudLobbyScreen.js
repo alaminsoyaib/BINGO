@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, Share, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, Modal, Share, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, BackHandler, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Clipboard from 'expo-clipboard';
@@ -183,6 +183,16 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
             <View style={{ marginBottom: theme.spacing.md }}>
               {isHost ? (
                 <GameButton title="START" variant="success" onPress={() => {
+                  if (session.players.length < 2) {
+                    setAlertConfig({
+                      visible: true,
+                      title: 'Cannot Start',
+                      message: 'No other player has joined yet.',
+                      type: 'warning',
+                      icon: 'alert-circle'
+                    });
+                    return;
+                  }
                   if (session.startGame) session.startGame();
                 }} />
               ) : (
