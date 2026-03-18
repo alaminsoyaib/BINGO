@@ -128,6 +128,9 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
   const onlineModeLabel = mode === 'cloud' ? 'Global room' : 'Local room';
   const currentTurnPlayer = isOnline ? session.players?.find(p => p.id === session.currentTurnPlayerId) : null;
   const isGameOver = isOnline && session.winners && session.winners.length > 0;
+  const allPlayersBoardReady = isOnline ? session.players?.every(p => p.boardReady) : true;
+  const isAbandoned = isOnline && session.inGame && session.players?.length === 1 && !isGameOver;
+  
   const onlineStatus = !isOnline
     ? ''
     : session.status === 'connecting'
@@ -137,9 +140,21 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
     : session.inGame
     ? `${onlineModeLabel} - Players: ${session.players.length}`
     : `${onlineModeLabel} - Waiting for all players`;
-  const turnLabel = isOnline && session.inGame
-    ? (session.isYourTurn ? 'Your turn' : `${currentTurnPlayer?.name || 'Player'}'s turn`)
-    : null;
+    
+  let turnLabel = null;
+  if (isOnline && session.inGame) {
+    if (!isSetupPhase && !allPlayersBoardReady) {
+      const readyCount = session.players.filter(p => p.boardReady).length;
+      turnLabel = `Wait while others select tiles... (${readyCount}/${session.players.length})`;
+    } else {
+      const turnOrderStr = session.players.map(p => 
+        p.id === session.currentTurnPlayerId ? `★ ${p.name}` : p.name
+      ).join(' → ');
+      turnLabel = session.isYourTurn 
+        ? `Your turn\n${turnOrderStr}` 
+        : `${currentTurnPlayer?.name || 'Player'}'s turn\n${turnOrderStr}`;
+    }
+  }
   let winnerLabel = null;
   if (isOnline && isGameOver) {
     if (session.winners.length > 1) {
@@ -159,10 +174,16 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
 
   useEffect(() => {
     if (!isOnline) return;
-    if (!isSetupPhase && !session.localReady) {
-      session.sendReady();
+    if (!isSetupPhase && !session.localBoardReady) {
+      if (session.sendBoardReady) session.sendBoardReady(true);
     }
   }, [isOnline, isSetupPhase, session]);
+
+  // Sync BINGO progress (letter count) to Firebase
+  useEffect(() => {
+    if (!isOnline || !session.sendBingoProgress) return;
+    session.sendBingoProgress(bingoWord.length);
+  }, [isOnline, bingoWord.length, session]);
 
   useEffect(() => {
     if (!isOnline) return;
@@ -230,9 +251,12 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
       restartGame();
       return;
     }
-    if (session.setPlayerReady) {
-      session.setPlayerReady(true);
+    // Mark ourselves as ready and go back to lobby screen
+    if (session.returnToLobby) {
+      session.returnToLobby();
     }
+    restartGame();
+    winSentRef.current = false;
     if (onReturnToLobby) {
       onReturnToLobby();
     }
@@ -310,11 +334,18 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
         )}
 
         <View style={styles.boardContainer}>
+          {isAbandoned && (
+            <View style={StyleSheet.absoluteFill}>
+              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 10, borderRadius: theme.radius.md }}>
+                <Text style={{ color: theme.colors.accentYellow, ...theme.typography.h2, textAlign: 'center', padding: theme.spacing.md }}>Other players left the room. You are the only one here.</Text>
+              </View>
+            </View>
+          )}
           <Board 
             board={board} 
             winningIndexes={winningIndexes} 
             onTilePress={handleTilePress} 
-            disabled={isWin || (isOnline && !isSetupPhase && (!session.inGame || !session.isYourTurn || isGameOver))}
+            disabled={isWin || isAbandoned || (isOnline && !isSetupPhase && (!session.inGame || !session.isYourTurn || isGameOver || !allPlayersBoardReady))}
           />
         </View>
 
@@ -327,6 +358,26 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
             </View>
           ))}
         </View>
+
+        {isOnline && session.inGame && !isSetupPhase && session.players?.length > 1 && (
+          <View style={styles.playersProgressContainer}>
+            {session.players.filter(p => p.id !== session.playerId).map(p => {
+              const progress = p.bingoProgress || 0;
+              return (
+                <View key={p.id} style={styles.playerProgressRow}>
+                  <Text style={styles.playerProgressName} numberOfLines={1}>{p.name}</Text>
+                  <View style={styles.playerProgressLetters}>
+                    {fullWord.split('').map((letter, i) => (
+                      <View key={i} style={[styles.miniLetterBox, i < progress && styles.miniLetterBoxActive]}>
+                        <Text style={[styles.miniLetterText, i < progress && styles.miniLetterTextActive]}>{letter}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
 
         {isLocalWinner && <WinOverlay player={player} />}
 
@@ -368,6 +419,14 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
                 </View>
               </ScrollView>
               <GameButton title="GOT IT" variant="secondary" onPress={() => setInstructionsVisible(false)} style={{ marginTop: theme.spacing.lg }} />
+              {isOnline && (
+                <View style={{ marginTop: theme.spacing.lg, backgroundColor: theme.colors.surfaceLight, padding: theme.spacing.md, borderRadius: theme.radius.md }}>
+                  <Text style={[styles.instructionText, { textAlign: 'center', marginBottom: theme.spacing.sm, color: theme.colors.textPrimary }]}>
+                    Room Code: <Text style={[styles.boldText, { fontSize: theme.typography.h2.fontSize, color: theme.colors.accent }]}>{session.roomCode}</Text>
+                  </Text>
+                  <GameButton title="RETURN TO LOBBY" variant="danger" onPress={() => { setInstructionsVisible(false); handleRestart(); }} />
+                </View>
+              )}
             </View>
           </View>
         </Modal>
@@ -379,7 +438,7 @@ const BingoScreen = ({ mode = 'offline', session, onExitOnline, onBack, onReturn
                 <>
                   <Text style={styles.modalTitle}>GAME OVER</Text>
                   <Text style={[styles.instructionText, { textAlign: 'center', marginBottom: theme.spacing.xl }]}>What would you like to do next?</Text>
-                  <GameButton title="PLAY AGAIN" variant="success" onPress={() => { setExitModalVisible(false); handleRestart(); }} style={{ width: '100%', marginBottom: theme.spacing.md }} />
+                  <GameButton title="RETURN TO LOBBY" variant="success" onPress={() => { setExitModalVisible(false); handleRestart(); }} style={{ width: '100%', marginBottom: theme.spacing.md }} />
                   <GameButton title="EXIT ROOM" variant="danger" onPress={() => { setExitModalVisible(false); if (onExitOnline) onExitOnline(); }} style={{ width: '100%' }} />
                 </>
               ) : (
@@ -571,6 +630,48 @@ const styles = StyleSheet.create({
   },
   boldText: {
     fontWeight: 'bold',
+    color: theme.colors.textPrimary,
+  },
+  playersProgressContainer: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.sm,
+    padding: theme.spacing.sm,
+    marginBottom: 5,
+    gap: theme.spacing.xs,
+  },
+  playerProgressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  playerProgressName: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    width: 70,
+    fontWeight: '600',
+  },
+  playerProgressLetters: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  miniLetterBox: {
+    width: 22,
+    height: 22,
+    backgroundColor: theme.colors.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 3,
+  },
+  miniLetterBoxActive: {
+    backgroundColor: theme.colors.success,
+  },
+  miniLetterText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: theme.colors.textSecondary,
+  },
+  miniLetterTextActive: {
     color: theme.colors.textPrimary,
   }
 });

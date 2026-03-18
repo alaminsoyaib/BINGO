@@ -29,7 +29,8 @@ const initialState = {
   winners: [],
   resetCounter: 0,
   error: null,
-  localReady: false
+  localReady: false,
+  localBoardReady: false
 };
 
 const createPlayerId = () => `p_${Math.random().toString(36).slice(2, 10)}`;
@@ -64,11 +65,24 @@ export const useCloudSession = () => {
   const syncFromRoom = (roomCode, roomData) => {
     const players = Object.values(roomData.players || {});
     const game = roomData.game || {};
-    const localPlayer = players.find((player) => player.id === stateRef.current.playerId);
+    const myId = stateRef.current.playerId;
+    const localPlayer = players.find((player) => player.id === myId);
+
+    // If we were in the room but are no longer in the player list, we got kicked
+    if (!localPlayer && myId && stateRef.current.status === 'connected') {
+      detachRoomListener();
+      roomRefRef.current = null;
+      playerRefRef.current = null;
+      setState({ ...initialState, error: 'You have been removed from the room.' });
+      return;
+    }
+
+    const derivedRole = roomData.hostId === myId ? 'host' : 'client';
 
     setState((prev) => ({
       ...prev,
       status: 'connected',
+      role: derivedRole,
       roomCode,
       hostInfo: { roomCode },
       players,
@@ -80,6 +94,7 @@ export const useCloudSession = () => {
       resetCounter: game.resetCounter ?? 0,
       error: null,
       localReady: localPlayer ? localPlayer.ready : false,
+      localBoardReady: localPlayer ? localPlayer.boardReady : false,
       hostId: roomData.hostId
     }));
   };
@@ -119,6 +134,40 @@ export const useCloudSession = () => {
     await setPlayerReady(true);
   };
 
+  const sendBoardReady = async (isReady) => {
+    if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
+    const playerRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}/players/${stateRef.current.playerId}`);
+    await update(playerRef, { boardReady: isReady });
+  };
+
+  const sendBingoProgress = async (lettersCount) => {
+    if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
+    const playerRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}/players/${stateRef.current.playerId}`);
+    await update(playerRef, { bingoProgress: lettersCount });
+  };
+
+  const updatePlayerName = async (newName) => {
+    if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
+    const playerRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}/players/${stateRef.current.playerId}`);
+    await update(playerRef, { name: newName });
+  };
+
+  const kickPlayer = async (playerIdToKick) => {
+    if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
+    // Only the current host (from Firebase) can kick
+    if (stateRef.current.hostId !== stateRef.current.playerId) return;
+    const playerRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}/players/${playerIdToKick}`);
+    await remove(playerRef);
+  };
+
+  const transferHost = async (newHostId) => {
+    if (!stateRef.current.roomCode || !stateRef.current.playerId) return;
+    if (stateRef.current.hostId !== stateRef.current.playerId) return;
+    const roomRef = ref(database, `${ROOMS_ROOT}/${stateRef.current.roomCode}`);
+    await update(roomRef, { hostId: newHostId });
+  };
+
+
   const startGame = async () => {
     if (!roomRefRef.current) return;
 
@@ -134,7 +183,7 @@ export const useCloudSession = () => {
 
       const resetPlayers = {};
       players.forEach(p => {
-        resetPlayers[p.id] = { ...p, ready: false };
+        resetPlayers[p.id] = { ...p, ready: false, boardReady: false };
       });
 
       return {
@@ -155,8 +204,10 @@ export const useCloudSession = () => {
 
   const createRoom = async ({ name }) => {
     if (stateRef.current.status === 'connecting' || stateRef.current.status === 'connected') return;
-    const playerId = createPlayerId();
+    stateRef.current = { ...stateRef.current, status: 'connecting' };
+    
     const roomCode = createRoomCode();
+    const playerId = createPlayerId();
     const roomRef = ref(database, `${ROOMS_ROOT}/${roomCode}`);
     const playerRef = ref(database, `${ROOMS_ROOT}/${roomCode}/players/${playerId}`);
 
@@ -169,7 +220,8 @@ export const useCloudSession = () => {
         [playerId]: {
           id: playerId,
           name,
-          ready: true
+          ready: true,
+          boardReady: false
         }
       },
       game: {
@@ -189,13 +241,19 @@ export const useCloudSession = () => {
 
   const joinRoom = async ({ roomCode, name }) => {
     if (stateRef.current.status === 'connecting' || stateRef.current.status === 'connected') return;
+    stateRef.current = { ...stateRef.current, status: 'connecting' };
+    
+    setState((prev) => ({ ...prev, status: 'connecting', error: null }));
+
     const normalizedCode = (roomCode || '').trim().toUpperCase();
     if (!normalizedCode) {
+      stateRef.current.status = 'error';
       setState((prev) => ({ ...prev, status: 'error', error: 'Room code is required.' }));
       return;
     }
 
     if (normalizedCode.length !== ROOM_CODE_LENGTH) {
+      stateRef.current = { ...stateRef.current, status: 'error' };
       setState((prev) => ({
         ...prev,
         status: 'error',
@@ -204,11 +262,11 @@ export const useCloudSession = () => {
       return;
     }
 
-    const playerId = createPlayerId();
     const roomRef = ref(database, `${ROOMS_ROOT}/${normalizedCode}`);
     const roomSnapshot = await get(roomRef);
 
     if (!roomSnapshot.exists()) {
+      stateRef.current = { ...stateRef.current, status: 'error' };
       setState((prev) => ({ ...prev, status: 'error', error: 'Room not found.' }));
       return;
     }
@@ -234,11 +292,20 @@ export const useCloudSession = () => {
       hostInfo: { roomCode: normalizedCode }
     });
 
-    await set(playerRef, { id: finalPlayerId, name, ready: false });
+    await set(playerRef, { id: finalPlayerId, name, ready: true, boardReady: false });
     playerRefRef.current = playerRef;
     onDisconnect(playerRef).remove();
 
     attachRoomListener(normalizedCode);
+  };
+
+  const returnToLobby = async () => {
+    const { roomCode, playerId } = stateRef.current;
+    if (!roomCode || !playerId) return;
+
+    // Mark self as ready
+    const playerRef = ref(database, `${ROOMS_ROOT}/${roomCode}/players/${playerId}`);
+    await update(playerRef, { ready: true, boardReady: false });
   };
 
   const leaveRoom = async (skipStateReset = false) => {
@@ -249,8 +316,9 @@ export const useCloudSession = () => {
       playerRefRef.current = null;
     }
 
+    // Only delete the entire room if we are the current host
     const roomRef = roomRefRef.current;
-    if (roomRef && stateRef.current.role === 'host') {
+    if (roomRef && stateRef.current.hostId === stateRef.current.playerId) {
       await remove(roomRef).catch(() => undefined);
     }
 
@@ -289,16 +357,24 @@ export const useCloudSession = () => {
   };
 
   const sendReset = async () => {
-    const { roomCode, role } = stateRef.current;
-    if (!roomCode || role !== 'host') return;
+    const { roomCode, playerId, hostId } = stateRef.current;
+    if (!roomCode || hostId !== playerId) return;
 
     const roomRef = ref(database, `${ROOMS_ROOT}/${roomCode}`);
 
     await runTransaction(roomRef, (room) => {
       if (!room) return room;
 
+      // Mark the host as ready when resetting
+      const players = room.players || {};
+      const updatedPlayers = {};
+      Object.keys(players).forEach(pid => {
+        updatedPlayers[pid] = { ...players[pid], boardReady: false };
+      });
+
       return {
         ...room,
+        players: updatedPlayers,
         game: {
           ...(room.game || {}),
           inGame: false,
@@ -340,7 +416,7 @@ export const useCloudSession = () => {
     };
   }, []);
 
-  const isHost = useMemo(() => state.role === 'host', [state.role]);
+  const isHost = useMemo(() => state.hostId === state.playerId, [state.hostId, state.playerId]);
   const isYourTurn = useMemo(
     () => state.inGame && state.currentTurnPlayerId === state.playerId,
     [state.currentTurnPlayerId, state.inGame, state.playerId]
@@ -358,6 +434,12 @@ export const useCloudSession = () => {
     sendReset,
     sendWin,
     setPlayerReady,
-    sendReady
+    sendReady,
+    sendBoardReady,
+    updatePlayerName,
+    kickPlayer,
+    transferHost,
+    returnToLobby,
+    sendBingoProgress
   };
 };

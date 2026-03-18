@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
     ...theme.typography.h2,
     color: theme.colors.accentYellow,
     marginVertical: theme.spacing.xs,
+    textAlign: 'center',
   },
   lastCallText: {
     ...theme.typography.body1,

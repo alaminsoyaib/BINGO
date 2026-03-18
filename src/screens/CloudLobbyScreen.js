@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, Share, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, BackHandler, Alert } from 'react-native';
+import { View, Text, StyleSheet, Modal, Share, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Clipboard from 'expo-clipboard';
@@ -25,23 +25,42 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
   const [permission, requestPermission] = useCameraPermissions();
 
   const isConnected = session.status === 'connected';
-  const isHost = session.role === 'host';
+  const isHost = session.isHost;
   const displayName = playerName.trim() || savedPlayerName?.trim() || 'Player';
   const localPlayer = session.players?.find(p => p.id === session.playerId);
+  const [managePlayer, setManagePlayer] = useState(null); // player object for host action sheet
 
   useEffect(() => {
     setPlayerName(savedPlayerName || '');
   }, [savedPlayerName]);
 
+  // Navigate to game when a new game starts (not a finished game)
   useEffect(() => {
-    if (session.inGame) {
+    if (session.inGame && (!session.winners || session.winners.length === 0)) {
       onEnterGame();
     }
-  }, [session.inGame, onEnterGame]);
+  }, [session.inGame, session.winners, onEnterGame]);
+
+  // Auto-navigate back when kicked (error state set by syncFromRoom)
+  useEffect(() => {
+    if (session.status === 'idle' && session.error) {
+      setAlertConfig({
+        visible: true,
+        title: 'Removed',
+        message: session.error,
+        type: 'warning',
+        icon: 'alert-circle',
+        onCloseAction: onBack
+      });
+    }
+  }, [session.status, session.error, onBack]);
 
   const handleNameSave = async (newName) => {
     if (newName) {
       setPlayerName(newName);
+      if (session.updatePlayerName && session.status === 'connected') {
+        session.updatePlayerName(newName);
+      }
       if (onPlayerNameChange) {
         await onPlayerNameChange(newName);
       }
@@ -162,15 +181,26 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
             </View>
             <GameButton title="COPY CODE" variant="accent" onPress={copyRoomCode} style={styles.copyButton} />
 
+            {isHost && (
+              <Text style={[styles.helpText, { color: theme.colors.textSecondary, fontStyle: 'italic' }]}>Tap on a player to manage them.</Text>
+            )}
+
             <View style={styles.playerList}>
               <Text style={styles.listHeader}>PLAYERS ({session.players.length})</Text>
               {session.players.map((player) => (
-                <View key={player.id} style={styles.playerItem}>
+                <TouchableOpacity 
+                  key={player.id} 
+                  style={styles.playerItem}
+                  disabled={!isHost || player.id === session.playerId}
+                  onPress={() => setManagePlayer(player)}
+                >
                   <Text style={styles.playerItemText}>• {player.name}</Text>
-                  <Text style={[styles.playerStatus, player.id === session.hostId ? styles.statusReady : styles.statusWaiting]}>
-                    {player.id === session.hostId ? 'HOST' : 'WAITING'}
+                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
+                    {player.id === session.hostId 
+                      ? (player.ready ? 'READY (HOST)' : 'WAITING (HOST)')
+                      : (player.ready ? 'READY' : 'WAITING')}
                   </Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
 
@@ -188,6 +218,16 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
                       visible: true,
                       title: 'Cannot Start',
                       message: 'No other player has joined yet.',
+                      type: 'warning',
+                      icon: 'alert-circle'
+                    });
+                    return;
+                  }
+                  if (!session.players.every(p => p.ready)) {
+                    setAlertConfig({
+                      visible: true,
+                      title: 'Cannot Start',
+                      message: 'Not all players are ready. Wait for them to return to the lobby.',
                       type: 'warning',
                       icon: 'alert-circle'
                     });
@@ -276,8 +316,33 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
         message={alertConfig.message}
         type={alertConfig.type}
         icon={alertConfig.icon}
-        onClose={() => setAlertConfig(prev => ({ ...prev, visible: false }))}
+        onClose={() => {
+          const action = alertConfig.onCloseAction;
+          setAlertConfig(prev => ({ ...prev, visible: false, onCloseAction: undefined }));
+          if (action) action();
+        }}
       />
+
+      {/* Host Action Sheet for managing players */}
+      <Modal visible={!!managePlayer} animationType="fade" transparent={true} onRequestClose={() => setManagePlayer(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>MANAGE PLAYER</Text>
+            <Text style={[styles.helpText, { marginBottom: theme.spacing.lg }]}>
+              What do you want to do with {managePlayer?.name}?
+            </Text>
+            <GameButton title="MAKE HOST" variant="accent" onPress={() => {
+              if (managePlayer) session.transferHost?.(managePlayer.id);
+              setManagePlayer(null);
+            }} style={{ marginBottom: theme.spacing.md }} />
+            <GameButton title="KICK PLAYER" variant="danger" onPress={() => {
+              if (managePlayer) session.kickPlayer?.(managePlayer.id);
+              setManagePlayer(null);
+            }} style={{ marginBottom: theme.spacing.md }} />
+            <GameButton title="CANCEL" variant="secondary" onPress={() => setManagePlayer(null)} />
+          </View>
+        </View>
+      </Modal>
       </ScreenWrapper>
   );
 };
