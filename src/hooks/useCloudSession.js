@@ -319,7 +319,12 @@ export const useCloudSession = () => {
     // Only delete the entire room if we are the current host
     const roomRef = roomRefRef.current;
     if (roomRef && stateRef.current.hostId === stateRef.current.playerId) {
-      await remove(roomRef).catch(() => undefined);
+      const otherPlayer = stateRef.current.players.find(p => p.id !== stateRef.current.playerId);
+      if (otherPlayer) {
+        await update(roomRef, { hostId: otherPlayer.id }).catch(() => undefined);
+      } else {
+        await remove(roomRef).catch(() => undefined);
+      }
     }
 
     roomRefRef.current = null;

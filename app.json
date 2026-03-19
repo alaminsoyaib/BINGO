@@ -2,7 +2,7 @@
   "expo": {
     "name": "BINGO",
     "slug": "BINGO",
-    "version": "1.0.0",
+    "version": "2.0.3",
     "orientation": "portrait",
     "icon": "./assets/bingo.jpeg",
     "userInterfaceStyle": "light",

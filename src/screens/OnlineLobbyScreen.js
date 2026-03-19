@@ -248,6 +248,16 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
                     });
                     return;
                   }
+                  if (!session.players.every(p => p.ready)) {
+                    setAlertConfig({
+                      visible: true,
+                      title: 'Cannot Start',
+                      message: 'Not all players are ready. Wait for them to return to the lobby.',
+                      type: 'warning',
+                      icon: 'alert-circle'
+                    });
+                    return;
+                  }
                   if (session.startGame) session.startGame(); 
                 }} style={styles.halfBtn} />
               ) : (

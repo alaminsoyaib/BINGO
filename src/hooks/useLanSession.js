@@ -15,7 +15,8 @@ const initialState = {
   calledNumbers: [],
   lastCalledNumber: null,
   localReady: false,
-  winnerId: null,
+  localBoardReady: false,
+  winners: [],
   resetCounter: 0,
   error: null,
   hostId: 0
@@ -85,14 +86,14 @@ export const useLanSession = () => {
   };
 
   const broadcastState = () => {
-    const { players, inGame, currentTurnPlayerId, calledNumbers, winnerId } = stateRef.current;
+    const { players, inGame, currentTurnPlayerId, calledNumbers, winners } = stateRef.current;
     broadcast({
       type: 'state',
       players,
       inGame,
       currentTurnPlayerId,
       calledNumbers,
-      winnerId
+      winners
     });
   };
 
@@ -103,27 +104,31 @@ export const useLanSession = () => {
       calledNumbers: [],
       lastCalledNumber: null,
       currentTurnPlayerId: null,
-      winnerId: null,
+      winners: [],
       localReady: false,
-      players: prev.players.map((player) => ({ ...player, ready: false })),
+      localBoardReady: false,
+      players: prev.players.map((player) => ({ ...player, ready: false, boardReady: false })),
       resetCounter: prev.resetCounter + 1
     }));
   };
 
-  const handleWin = (winnerId) => {
-    if (stateRef.current.winnerId !== null && stateRef.current.winnerId !== undefined) return;
-    updateState((prev) => ({
-      ...prev,
-      winnerId,
-      inGame: false
-    }));
-    broadcast({ type: 'win', winnerId });
+  const handleWin = (winPlayerId) => {
+    updateState((prev) => {
+      const currentWinners = prev.winners || [];
+      if (currentWinners.includes(winPlayerId)) return prev;
+      return {
+        ...prev,
+        winners: [...currentWinners, winPlayerId],
+        inGame: false
+      };
+    });
+    broadcast({ type: 'win', winnerId: winPlayerId });
     broadcastState();
   };
 
   const handleCall = (playerId, number) => {
-    const { inGame, currentTurnPlayerId, calledNumbers, players, winnerId } = stateRef.current;
-    if (!inGame || winnerId !== null) return;
+    const { inGame, currentTurnPlayerId, calledNumbers, players, winners } = stateRef.current;
+    if (!inGame || (winners && winners.length > 0)) return;
     if (currentTurnPlayerId !== playerId) {
       const socket = socketsRef.current.get(playerId);
       sendToSocket(socket, { type: 'error', message: 'Not your turn' });
@@ -160,8 +165,8 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
       currentTurnPlayerId: startingPlayerId,
       calledNumbers: [],
       lastCalledNumber: null,
-      winnerId: null,
-      players: prev.players.map(p => ({ ...p, ready: false }))
+      winners: [],
+      players: prev.players.map(p => ({ ...p, ready: false, boardReady: false }))
     }));
     broadcast({ type: 'start', currentTurnPlayerId: startingPlayerId });
     broadcastState();
@@ -200,7 +205,7 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           const filteredPlayers = prev.players.filter((player) => player.name !== message.name);
           return {
             ...prev,
-            players: [...filteredPlayers, { id: clientId, name: message.name || `Player ${clientId}`, ready: false }]
+            players: [...filteredPlayers, { id: clientId, name: message.name || `Player ${clientId}`, ready: false, boardReady: false }]
           };
         });
         broadcastState();
@@ -211,6 +216,26 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           ...prev,
           players: prev.players.map((player) =>
             player.id === clientId ? { ...player, ready: true } : player
+          )
+        }));
+        broadcastState();
+        break;
+      }
+      case 'boardReady': {
+        updateState((prev) => ({
+          ...prev,
+          players: prev.players.map((player) =>
+            player.id === clientId ? { ...player, boardReady: message.isReady } : player
+          )
+        }));
+        broadcastState();
+        break;
+      }
+      case 'returnToLobby': {
+        updateState((prev) => ({
+          ...prev,
+          players: prev.players.map((player) =>
+            player.id === clientId ? { ...player, ready: true, boardReady: false } : player
           )
         }));
         broadcastState();
@@ -244,8 +269,9 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           inGame: message.inGame ?? prev.inGame,
           currentTurnPlayerId: message.currentTurnPlayerId ?? prev.currentTurnPlayerId,
           calledNumbers: message.calledNumbers ?? prev.calledNumbers,
-          winnerId: message.winnerId ?? prev.winnerId,
-          localReady: localPlayer ? localPlayer.ready : prev.localReady
+          winners: message.winners ?? prev.winners,
+          localReady: localPlayer ? localPlayer.ready : prev.localReady,
+          localBoardReady: localPlayer ? localPlayer.boardReady : prev.localBoardReady
         };
       });
       return;
@@ -266,11 +292,15 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
       return;
     }
     if (message.type === 'win') {
-      updateState((prev) => ({
-        ...prev,
-        winnerId: message.winnerId,
-        inGame: false
-      }));
+      updateState((prev) => {
+        const currentWinners = prev.winners || [];
+        if (currentWinners.includes(message.winnerId)) return prev;
+        return {
+          ...prev,
+          winners: [...currentWinners, message.winnerId],
+          inGame: false
+        };
+      });
       return;
     }
     if (message.type === 'error') {
@@ -319,7 +349,7 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           role: 'host',
           hostInfo: { ip: ipAddress, port },
           playerId: 0,
-          players: [{ id: 0, name, ready: false }]
+          players: [{ id: 0, name, ready: false, boardReady: false }]
         }));
       });
     } catch (error) {
@@ -394,6 +424,43 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
     }
   };
 
+  const sendBoardReady = (isReady) => {
+    if (stateRef.current.role === 'host') {
+      updateState((prev) => ({
+        ...prev,
+        localBoardReady: isReady,
+        players: prev.players.map((player) =>
+          player.id === prev.playerId ? { ...player, boardReady: isReady } : player
+        )
+      }));
+      broadcastState();
+      return;
+    }
+    if (clientSocketRef.current) {
+      updateState((prev) => ({ ...prev, localBoardReady: isReady }));
+      sendToSocket(clientSocketRef.current, { type: 'boardReady', isReady });
+    }
+  };
+
+  const returnToLobby = () => {
+    if (stateRef.current.role === 'host') {
+      updateState((prev) => ({
+        ...prev,
+        localReady: true,
+        localBoardReady: false,
+        players: prev.players.map((player) =>
+          player.id === prev.playerId ? { ...player, ready: true, boardReady: false } : player
+        )
+      }));
+      broadcastState();
+      return;
+    }
+    if (clientSocketRef.current) {
+      updateState((prev) => ({ ...prev, localReady: true, localBoardReady: false }));
+      sendToSocket(clientSocketRef.current, { type: 'returnToLobby' });
+    }
+  };
+
   const sendCall = (number) => {
     if (!stateRef.current.inGame) return;
     if (stateRef.current.role === 'host') {
@@ -441,6 +508,8 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
     leaveRoom,
     startGame,
     sendReady,
+    sendBoardReady,
+    returnToLobby,
     sendCall,
     sendReset,
     sendWin,
