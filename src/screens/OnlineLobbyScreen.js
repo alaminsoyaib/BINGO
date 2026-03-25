@@ -97,7 +97,7 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
   }, [scannerVisible]);
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper scrollable={false}>
           <ScreenHeader
             title={isHost ? 'LOCAL HOST' : 'LOCAL NETWORK'}
             onBack={onBack}

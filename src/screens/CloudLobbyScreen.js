@@ -124,7 +124,7 @@ const CloudLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlaye
   }, [scannerVisible]);
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper scrollable={false}>
           <ScreenHeader
             title={'GLOBAL PLAY'}
             onBack={onBack}

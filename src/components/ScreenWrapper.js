@@ -1,16 +1,28 @@
 import React from 'react';
-import { View, StyleSheet, StatusBar } from 'react-native';
+import { View, StyleSheet, StatusBar, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 
-const ScreenWrapper = ({ children, style }) => {
+const ScreenWrapper = ({ children, style, scrollable = true }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <View style={styles.container}>
-        <View style={[styles.content, style]}>
-          {children}
-        </View>
+        {scrollable ? (
+          <ScrollView 
+            style={styles.scrollView} 
+            contentContainerStyle={[styles.content, style]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={true}
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={[styles.content, style]}>
+            {children}
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -26,9 +38,14 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  content: {
+  scrollView: {
     flex: 1,
     width: '100%',
+  },
+  content: {
+    flexGrow: 1,
+    width: '100%',
+    alignSelf: 'center',
     maxWidth: theme.layout.maxContentWidth,
     paddingHorizontal: theme.spacing.sm,
     paddingTop: theme.spacing.sm + theme.spacing.xs / 2,

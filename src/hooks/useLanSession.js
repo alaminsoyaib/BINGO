@@ -1,9 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { NativeModules } from 'react-native';
 import TcpSocket from 'react-native-tcp-socket';
 import * as Network from 'expo-network';
 
 const DEFAULT_PORT = 5050;
+
+// Native module to get ALL network interface IPs (works with hotspots)
+const { NetworkInfo } = NativeModules;
+
+const getLocalIpAddress = async () => {
+  // Strategy 1: Use our native module to enumerate all network interfaces
+  // This reliably detects hotspot IPs that expo-network misses
+  if (NetworkInfo) {
+    try {
+      const addresses = await NetworkInfo.getLocalIpAddresses();
+      console.log('[NetworkInfo] All detected IPs:', JSON.stringify(addresses));
+      if (addresses && addresses.length > 0) {
+        // Return the first non-loopback IPv4 address found
+        return addresses[0];
+      }
+    } catch (e) {
+      console.log('[NetworkInfo] Native module error:', e.message);
+    }
+  } else {
+    console.log('[NetworkInfo] Native module not available, falling back to expo-network');
+  }
+
+  // Strategy 2: Fall back to expo-network (works on normal Wi-Fi)
+  try {
+    const ip = await Network.getIpAddressAsync();
+    console.log('[NetworkInfo] expo-network IP:', ip);
+    if (ip && ip !== '0.0.0.0') return ip;
+  } catch (_) {}
+
+  return '0.0.0.0';
+};
 
 const initialState = {
   status: 'idle',
@@ -142,7 +173,7 @@ export const useLanSession = () => {
       return;
     }
 
-const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
+    const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
     updateState((prev) => ({
       ...prev,
       calledNumbers: [...prev.calledNumbers, number],
@@ -321,10 +352,9 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
         updateState({ error: 'TCP server not available. Use a Dev Client build, not Expo Go.', status: 'error' });
         return;
       }
-      let ipAddress = await Network.getIpAddressAsync();
-      if (ipAddress === '0.0.0.0' && Platform.OS === 'android') {
-        ipAddress = '192.168.43.1';
-      }
+
+      const ipAddress = await getLocalIpAddress();
+
       const server = TcpSocket.createServer((socket) => {
         const clientId = nextPlayerIdRef.current++;
         socketsRef.current.set(clientId, socket);
