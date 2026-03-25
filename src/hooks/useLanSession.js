@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import TcpSocket from 'react-native-tcp-socket';
 import * as Network from 'expo-network';
 
@@ -86,13 +87,14 @@ export const useLanSession = () => {
   };
 
   const broadcastState = () => {
-    const { players, inGame, currentTurnPlayerId, calledNumbers, winners } = stateRef.current;
+    const { players, inGame, currentTurnPlayerId, calledNumbers, lastCalledNumber, winners } = stateRef.current;
     broadcast({
       type: 'state',
       players,
       inGame,
       currentTurnPlayerId,
       calledNumbers,
+      lastCalledNumber,
       winners
     });
   };
@@ -269,6 +271,7 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           inGame: message.inGame ?? prev.inGame,
           currentTurnPlayerId: message.currentTurnPlayerId ?? prev.currentTurnPlayerId,
           calledNumbers: message.calledNumbers ?? prev.calledNumbers,
+          lastCalledNumber: message.lastCalledNumber !== undefined ? message.lastCalledNumber : prev.lastCalledNumber,
           winners: message.winners ?? prev.winners,
           localReady: localPlayer ? localPlayer.ready : prev.localReady,
           localBoardReady: localPlayer ? localPlayer.boardReady : prev.localBoardReady
@@ -318,7 +321,10 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
         updateState({ error: 'TCP server not available. Use a Dev Client build, not Expo Go.', status: 'error' });
         return;
       }
-      const ipAddress = await Network.getIpAddressAsync();
+      let ipAddress = await Network.getIpAddressAsync();
+      if (ipAddress === '0.0.0.0' && Platform.OS === 'android') {
+        ipAddress = '192.168.43.1';
+      }
       const server = TcpSocket.createServer((socket) => {
         const clientId = nextPlayerIdRef.current++;
         socketsRef.current.set(clientId, socket);
