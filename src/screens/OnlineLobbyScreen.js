@@ -229,8 +229,10 @@ const OnlineLobbyScreen = ({ session, onBack, onEnterGame, playerName: savedPlay
               {session.players.map((player) => (
                 <View key={player.id} style={styles.playerItem}>
                   <Text style={styles.playerItemText}>• {player.name}</Text>
-                  <Text style={[styles.playerStatus, player.id === session.hostId ? styles.statusReady : styles.statusWaiting]}>
-                    {player.id === session.hostId ? 'HOST' : 'WAITING'}
+                  <Text style={[styles.playerStatus, player.ready ? styles.statusReady : styles.statusWaiting]}>
+                    {player.id === session.hostId 
+                      ? (player.ready ? 'READY (HOST)' : 'WAITING (HOST)')
+                      : (player.ready ? 'READY' : 'WAITING')}
                   </Text>
                 </View>
               ))}

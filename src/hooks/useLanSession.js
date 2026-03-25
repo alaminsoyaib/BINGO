@@ -205,7 +205,7 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           const filteredPlayers = prev.players.filter((player) => player.name !== message.name);
           return {
             ...prev,
-            players: [...filteredPlayers, { id: clientId, name: message.name || `Player ${clientId}`, ready: false, boardReady: false }]
+            players: [...filteredPlayers, { id: clientId, name: message.name || `Player ${clientId}`, ready: true, boardReady: false }]
           };
         });
         broadcastState();
@@ -349,7 +349,7 @@ const nextTurnPlayerId = getNextTurnPlayerId(players, currentTurnPlayerId);
           role: 'host',
           hostInfo: { ip: ipAddress, port },
           playerId: 0,
-          players: [{ id: 0, name, ready: false, boardReady: false }]
+          players: [{ id: 0, name, ready: true, boardReady: false }]
         }));
       });
     } catch (error) {
