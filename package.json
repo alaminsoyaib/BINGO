@@ -15,6 +15,7 @@
     "expo-av": "^16.0.8",
     "expo-camera": "~17.0.10",
     "expo-clipboard": "^55.0.8",
+    "expo-dev-client": "~6.0.20",
     "expo-network": "~8.0.8",
     "expo-status-bar": "~3.0.9",
     "expo-system-ui": "~6.0.9",
